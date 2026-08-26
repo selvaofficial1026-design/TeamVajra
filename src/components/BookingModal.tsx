@@ -136,31 +136,47 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     if (!loginCode || loginCode.trim().length === 0) {
       setSystemAlert({
         title: "Access Code Required",
-        message: "Please enter or paste your Student Access Code.",
+        message: "Please enter or paste your Student Access Code or registered phone number.",
         type: "warning"
       });
       return;
     }
-    const code = loginCode.trim().toUpperCase();
-    const registered = VajraStudentStore.getMemberFromRegistry(code);
-    if (registered) {
-      if (registered.approvalStatus === "PENDING_APPROVAL") {
-        setSystemAlert({
-          title: "Waiting for Admin Approval",
-          message: `Your admission request (${code}) is currently under review by Academy Admin. Please check back shortly once approved.`,
-          type: "warning"
-        });
-        return;
-      }
-      VajraStudentStore.setStudent(registered);
-      handleEnterPortal();
-    } else {
+    const cleanUpper = loginCode.trim().toUpperCase();
+    let registered = VajraStudentStore.getMemberFromRegistry(cleanUpper);
+    if (!registered) {
+      registered = VajraStudentStore.getStudentByPhone(loginCode.trim());
+    }
+
+    if (!registered) {
       setSystemAlert({
-        title: "Access Code Not Found",
-        message: `No student profile found for code "${loginCode}". Please verify your code or register as a new student.`,
+        title: "Access Denied: Invalid Credentials",
+        message: `No student account found for "${loginCode}". Please verify your credentials or register as a new student.`,
         type: "error"
       });
+      return;
     }
+
+    if (registered.approvalStatus === "PENDING_APPROVAL") {
+      setSystemAlert({
+        title: "Waiting for Admin Approval",
+        message: `Your admission request (${registered.requestCode || registered.accessCode}) is currently under review by Academy Admin. Please check back shortly once approved.`,
+        type: "warning"
+      });
+      return;
+    }
+
+    if (registered.approvalStatus === "REJECTED") {
+      setSystemAlert({
+        title: "Admission Request Rejected",
+        message: `The admission request for ${registered.name} was not approved. Please contact the academy office.`,
+        type: "error"
+      });
+      return;
+    }
+
+    // Only APPROVED students are allowed to enter
+    VajraStudentStore.setStudent(registered);
+    handleEnterPortal();
   };
 
   const handleEnterPortal = () => {

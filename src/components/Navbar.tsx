@@ -83,34 +83,49 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
       return;
     }
 
-    const code = rawCode.toUpperCase();
-    const registered = VajraStudentStore.getMemberFromRegistry(code);
+    const cleanUpper = rawCode.toUpperCase();
+    let registered = VajraStudentStore.getMemberFromRegistry(cleanUpper);
+    if (!registered) {
+      registered = VajraStudentStore.getStudentByPhone(rawCode);
+    }
 
-    if (registered) {
-      if (registered.approvalStatus === "PENDING_APPROVAL") {
-        setSystemAlert({
-          title: "Waiting for Admin Approval",
-          message: `Your admission request (${code}) is currently under review by Academy Admin. Please check back shortly once approved.`,
-          type: "warning"
-        });
-        return;
-      }
-      VajraStudentStore.setStudent(registered);
-      setQuickLoginOpen(false);
-      setIsAdminRedirect(false);
-      setVerifiedPayload({
-        name: registered.name,
-        code: registered.accessCode,
-        course: registered.course
-      });
-      setIsVerifying(true);
-    } else {
+    if (!registered) {
       setSystemAlert({
-        title: "Access Code Not Found",
-        message: `No student profile found for code "${rawCode}". If you recently registered, please track your approval status on the login page.`,
+        title: "Access Denied: Invalid Credentials",
+        message: `No student account found for "${rawCode}". Please check your code or register for a course.`,
         type: "error"
       });
+      return;
     }
+
+    if (registered.approvalStatus === "PENDING_APPROVAL") {
+      setSystemAlert({
+        title: "Waiting for Admin Approval",
+        message: `Your admission request (${registered.requestCode || registered.accessCode}) is currently under review by Academy Admin. Please check back shortly once approved.`,
+        type: "warning"
+      });
+      return;
+    }
+
+    if (registered.approvalStatus === "REJECTED") {
+      setSystemAlert({
+        title: "Admission Request Rejected",
+        message: `The admission request for ${registered.name} was not approved. Please contact the academy office.`,
+        type: "error"
+      });
+      return;
+    }
+
+    // Only APPROVED students
+    VajraStudentStore.setStudent(registered);
+    setQuickLoginOpen(false);
+    setIsAdminRedirect(false);
+    setVerifiedPayload({
+      name: registered.name,
+      code: registered.accessCode,
+      course: registered.course
+    });
+    setIsVerifying(true);
   };
 
   const navItems = [

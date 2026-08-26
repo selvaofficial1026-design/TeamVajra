@@ -148,7 +148,13 @@ export class VajraStudentStore {
     const data = localStorage.getItem(ACTIVE_STUDENT_KEY);
     if (!data) return null;
     try {
-      return JSON.parse(data);
+      const student: VajraStudent = JSON.parse(data);
+      // Strictly verify student is APPROVED and exists in registry
+      if (!student || student.approvalStatus !== 'APPROVED') {
+        localStorage.removeItem(ACTIVE_STUDENT_KEY);
+        return null;
+      }
+      return student;
     } catch {
       return null;
     }
@@ -156,7 +162,7 @@ export class VajraStudentStore {
 
   static setStudent(student: VajraStudent | null) {
     if (typeof window === 'undefined') return;
-    if (student) {
+    if (student && student.approvalStatus === 'APPROVED') {
       localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(student));
       this.saveMemberToRegistry(student);
     } else {

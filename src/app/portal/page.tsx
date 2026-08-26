@@ -39,8 +39,9 @@ export default function StudentPortalPage() {
 
   useEffect(() => {
     const existing = VajraStudentStore.getStudent();
-    if (!existing) {
-      router.push("/course");
+    if (!existing || existing.approvalStatus !== "APPROVED") {
+      VajraStudentStore.setStudent(null);
+      router.push("/login");
     } else {
       setStudent(existing);
       const vids = VajraStudentStore.getCourseVideos(existing.course);

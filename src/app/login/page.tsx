@@ -144,51 +144,53 @@ export default function AuthPage() {
     if (!loginCode || loginCode.trim().length === 0) {
       setSystemAlert({
         title: "Access Code Required",
-        message: "Please enter or paste your Student Access Code.",
+        message: "Please enter your valid Student Access Code or registered phone number.",
         type: "warning"
       });
       return;
     }
 
-    const rawName = loginName.trim().toLowerCase();
     const rawCode = loginCode.trim();
 
-    // Check if Admin Login (username: admin, password: 123 or admin)
-    if (
-      (rawName === "admin" && (rawCode === "123" || rawCode.toLowerCase() === "admin")) ||
-      (rawCode === "123" && (rawName === "admin" || rawName === ""))
-    ) {
-      VajraStudentStore.setAdminAuthenticated(true);
-      setIsAdminRedirect(true);
-      triggerWelcomeTransition("MASTER-ADMIN", "Academy Administrator", "Admin Master Console");
-      return;
-    }
-
     setIsAdminRedirect(false);
-    const code = rawCode.toUpperCase();
+    const cleanUpper = rawCode.toUpperCase();
 
-    // Check registry
-    const registered = VajraStudentStore.getMemberFromRegistry(code);
-    if (registered) {
-      if (registered.approvalStatus === "PENDING_APPROVAL") {
-        setSystemAlert({
-          title: "Waiting for Admin Approval",
-          message: `Your admission request (${code}) is currently under review by the Academy Admin. Please check back shortly once approved.`,
-          type: "warning"
-        });
-        return;
-      }
-      VajraStudentStore.setStudent(registered);
-      triggerWelcomeTransition(registered.accessCode, registered.name, registered.course);
+    // Search registry by Access Code, Tracking Code, or Phone
+    let registered = VajraStudentStore.getMemberFromRegistry(cleanUpper);
+    if (!registered) {
+      registered = VajraStudentStore.getStudentByPhone(rawCode);
+    }
+
+    if (!registered) {
+      setSystemAlert({
+        title: "Access Denied: Invalid Credentials",
+        message: `No student account found for "${rawCode}". Please check your code, or use the "Track Approval" tab to check admission status.`,
+        type: "error"
+      });
       return;
     }
 
-    // Direct Login Fallback
-    setSystemAlert({
-      title: "Access Code Not Found",
-      message: `No active student found for code "${rawCode}". If you recently registered, please use the "Track Approval" tab to check your status.`,
-      type: "error"
-    });
+    if (registered.approvalStatus === "PENDING_APPROVAL") {
+      setSystemAlert({
+        title: "Waiting for Admin Approval",
+        message: `Your admission request (${registered.requestCode || registered.accessCode}) is currently under review by the Academy Admin. You cannot access the student portal until your application is approved.`,
+        type: "warning"
+      });
+      return;
+    }
+
+    if (registered.approvalStatus === "REJECTED") {
+      setSystemAlert({
+        title: "Admission Request Rejected",
+        message: `The admission request for ${registered.name} was not approved. Please contact the academy office for inquiries.`,
+        type: "error"
+      });
+      return;
+    }
+
+    // Only APPROVED students are allowed to enter
+    VajraStudentStore.setStudent(registered);
+    triggerWelcomeTransition(registered.accessCode, registered.name, registered.course);
   };
 
   return (
