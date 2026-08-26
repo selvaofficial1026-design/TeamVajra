@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore } from "@/lib/store";
-import { useVajraTimezone } from "@/lib/timezone";
+import { useVajraTimezone, VAJRA_BATCHES } from "@/lib/timezone";
 import TimezoneSelector from "./TimezoneSelector";
 import VajraAlertModal from "./VajraAlertModal";
 import { 
@@ -28,7 +28,7 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   const [regPhone, setRegPhone] = useState("");
   const [regCourse, setRegCourse] = useState(initialArt || "FITNESS");
   const [regAgeGroup, setRegAgeGroup] = useState("Adult (18–45 yrs)");
-  const [regBatchTime, setRegBatchTime] = useState("Morning (05:30 AM – 07:30 AM)");
+  const [regBatchTime, setRegBatchTime] = useState("05:30 AM – 06:00 AM (Morning)");
 
   // Generated Access / Tracking Code State
   const [generatedCode, setGeneratedCode] = useState("");
@@ -412,15 +412,11 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                       onChange={(e) => setRegBatchTime(e.target.value)}
                       className="w-full min-h-[44px] px-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-xs font-semibold focus:border-blue-500 focus:outline-none transition"
                     >
-                      <option value="Morning (05:30 AM – 07:30 AM)">
-                        {convertBatch("Morning (05:30 AM – 07:30 AM)").fullLabel}
-                      </option>
-                      <option value="Evening (05:00 PM – 07:00 PM)">
-                        {convertBatch("Evening (05:00 PM – 07:00 PM)").fullLabel}
-                      </option>
-                      <option value="Night (07:00 PM – 08:30 PM)">
-                        {convertBatch("Night (07:00 PM – 08:30 PM)").fullLabel}
-                      </option>
+                      {VAJRA_BATCHES.map((batch) => (
+                        <option key={batch.id} value={batch.defaultLabel}>
+                          {convertBatch(batch.defaultLabel).fullLabel}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

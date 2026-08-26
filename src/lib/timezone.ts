@@ -274,6 +274,87 @@ export function convertIstHourMinToTarget(
   }
 }
 
+export interface VajraBatch {
+  id: string;
+  name: string;
+  slot: "Morning" | "Evening";
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+  istString: string;
+  defaultLabel: string;
+}
+
+export const VAJRA_BATCHES: VajraBatch[] = [
+  {
+    id: "batch-1",
+    name: "Early Morning Batch 1",
+    slot: "Morning",
+    startHour: 4,
+    startMinute: 30,
+    endHour: 5,
+    endMinute: 15,
+    istString: "04:30 AM – 05:15 AM IST",
+    defaultLabel: "04:30 AM – 05:15 AM (Morning)",
+  },
+  {
+    id: "batch-2",
+    name: "Morning Batch 2",
+    slot: "Morning",
+    startHour: 5,
+    startMinute: 30,
+    endHour: 6,
+    endMinute: 0,
+    istString: "05:30 AM – 06:00 AM IST",
+    defaultLabel: "05:30 AM – 06:00 AM (Morning)",
+  },
+  {
+    id: "batch-3",
+    name: "Morning Batch 3",
+    slot: "Morning",
+    startHour: 8,
+    startMinute: 30,
+    endHour: 9,
+    endMinute: 15,
+    istString: "08:30 AM – 09:15 AM IST",
+    defaultLabel: "08:30 AM – 09:15 AM (Morning)",
+  },
+  {
+    id: "batch-4",
+    name: "Evening Batch 1",
+    slot: "Evening",
+    startHour: 15,
+    startMinute: 45,
+    endHour: 16,
+    endMinute: 30,
+    istString: "03:45 PM – 04:30 PM IST",
+    defaultLabel: "03:45 PM – 04:30 PM (Evening)",
+  },
+  {
+    id: "batch-5",
+    name: "Evening Batch 2",
+    slot: "Evening",
+    startHour: 17,
+    startMinute: 0,
+    endHour: 17,
+    endMinute: 45,
+    istString: "05:00 PM – 05:45 PM IST",
+    defaultLabel: "05:00 PM – 05:45 PM (Evening)",
+  },
+  {
+    id: "batch-6",
+    name: "Night Batch 3",
+    slot: "Evening",
+    startHour: 18,
+    startMinute: 0,
+    endHour: 18,
+    endMinute: 45,
+    istString: "06:00 PM – 06:45 PM IST",
+    defaultLabel: "06:00 PM – 06:45 PM (Night)",
+  },
+];
+
 // Convert standard Academy Batch strings to the user's selected timezone
 export function convertBatchStringToTimezone(
   batchString: string,
@@ -285,40 +366,83 @@ export function convertBatchStringToTimezone(
   badgeLabel: string;
 } {
   const isIndia = targetTz.timeZone === "Asia/Kolkata";
+  const lower = batchString.toLowerCase();
 
-  if (batchString.includes("05:30") || batchString.toLowerCase().includes("morning")) {
+  // Batch 1: 04:30 AM – 05:15 AM
+  if (lower.includes("4.30") || lower.includes("4:30") || lower.includes("04:30")) {
+    const start = convertIstHourMinToTarget(4, 30, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(5, 15, targetTz.timeZone);
+    const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
+    return {
+      originalIst: "04:30 AM – 05:15 AM IST",
+      convertedTime,
+      fullLabel: isIndia ? "04:30 AM – 05:15 AM (Morning IST)" : `04:30 AM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Morning • 04:30 AM – 05:15 AM IST" : `Morning • ${convertedTime}`,
+    };
+  }
+
+  // Batch 2: 05:30 AM – 06:00 AM
+  if (lower.includes("5.30") || lower.includes("5:30") || lower.includes("05:30")) {
     const start = convertIstHourMinToTarget(5, 30, targetTz.timeZone);
-    const end = convertIstHourMinToTarget(7, 30, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(6, 0, targetTz.timeZone);
     const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
     return {
-      originalIst: "05:30 AM – 07:30 AM IST",
+      originalIst: "05:30 AM – 06:00 AM IST",
       convertedTime,
-      fullLabel: isIndia ? "Morning (05:30 AM – 07:30 AM IST)" : `Morning: ${convertedTime} (05:30 AM IST)`,
-      badgeLabel: isIndia ? "Morning • 05:30 AM – 07:30 AM IST" : `Morning • ${convertedTime}`,
+      fullLabel: isIndia ? "05:30 AM – 06:00 AM (Morning IST)" : `05:30 AM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Morning • 05:30 AM – 06:00 AM IST" : `Morning • ${convertedTime}`,
     };
   }
 
-  if (batchString.includes("05:00") || batchString.toLowerCase().includes("evening")) {
+  // Batch 3: 08:30 AM – 09:15 AM
+  if (lower.includes("8.30") || lower.includes("8:30") || lower.includes("08:30")) {
+    const start = convertIstHourMinToTarget(8, 30, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(9, 15, targetTz.timeZone);
+    const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
+    return {
+      originalIst: "08:30 AM – 09:15 AM IST",
+      convertedTime,
+      fullLabel: isIndia ? "08:30 AM – 09:15 AM (Morning IST)" : `08:30 AM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Morning • 08:30 AM – 09:15 AM IST" : `Morning • ${convertedTime}`,
+    };
+  }
+
+  // Batch 4: 03:45 PM – 04:30 PM
+  if (lower.includes("3.45") || lower.includes("3:45") || lower.includes("03:45") || lower.includes("15:45")) {
+    const start = convertIstHourMinToTarget(15, 45, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(16, 30, targetTz.timeZone);
+    const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
+    return {
+      originalIst: "03:45 PM – 04:30 PM IST",
+      convertedTime,
+      fullLabel: isIndia ? "03:45 PM – 04:30 PM (Evening IST)" : `03:45 PM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Evening • 03:45 PM – 04:30 PM IST" : `Evening • ${convertedTime}`,
+    };
+  }
+
+  // Batch 5: 05:00 PM – 05:45 PM
+  if (lower.includes("5 - 5.45") || lower.includes("5:00") || lower.includes("05:00 pm") || lower.includes("5.00") || lower.includes("17:00") || (lower.includes("5") && lower.includes("5:45"))) {
     const start = convertIstHourMinToTarget(17, 0, targetTz.timeZone);
-    const end = convertIstHourMinToTarget(19, 0, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(17, 45, targetTz.timeZone);
     const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
     return {
-      originalIst: "05:00 PM – 07:00 PM IST",
+      originalIst: "05:00 PM – 05:45 PM IST",
       convertedTime,
-      fullLabel: isIndia ? "Evening (05:00 PM – 07:00 PM IST)" : `Evening: ${convertedTime} (05:00 PM IST)`,
-      badgeLabel: isIndia ? "Evening • 05:00 PM – 07:00 PM IST" : `Evening • ${convertedTime}`,
+      fullLabel: isIndia ? "05:00 PM – 05:45 PM (Evening IST)" : `05:00 PM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Evening • 05:00 PM – 05:45 PM IST" : `Evening • ${convertedTime}`,
     };
   }
 
-  if (batchString.includes("07:00") || batchString.toLowerCase().includes("night")) {
-    const start = convertIstHourMinToTarget(19, 0, targetTz.timeZone);
-    const end = convertIstHourMinToTarget(20, 30, targetTz.timeZone);
+  // Batch 6: 06:00 PM – 06:45 PM
+  if (lower.includes("6-645") || lower.includes("6 - 6.45") || lower.includes("6:00") || lower.includes("06:00") || lower.includes("18:00") || (lower.includes("6") && lower.includes("6:45"))) {
+    const start = convertIstHourMinToTarget(18, 0, targetTz.timeZone);
+    const end = convertIstHourMinToTarget(18, 45, targetTz.timeZone);
     const convertedTime = `${start.timeStr} – ${end.timeStr} ${targetTz.code} ${start.isDifferentDay || ""}`.trim();
     return {
-      originalIst: "07:00 PM – 08:30 PM IST",
+      originalIst: "06:00 PM – 06:45 PM IST",
       convertedTime,
-      fullLabel: isIndia ? "Night (07:00 PM – 08:30 PM IST)" : `Night: ${convertedTime} (07:00 PM IST)`,
-      badgeLabel: isIndia ? "Night • 07:00 PM – 08:30 PM IST" : `Night • ${convertedTime}`,
+      fullLabel: isIndia ? "06:00 PM – 06:45 PM (Night IST)" : `06:00 PM IST (${convertedTime})`,
+      badgeLabel: isIndia ? "Night • 06:00 PM – 06:45 PM IST" : `Night • ${convertedTime}`,
     };
   }
 

@@ -188,7 +188,7 @@ export default function CoursePage() {
                               <span>Batches ({selectedTz.code})</span>
                             </span>
                             <span className="text-white text-[11px] font-bold text-right truncate">
-                              {selectedTz.flag} {convertBatch("Morning (05:30 AM – 07:30 AM)").convertedTime}
+                              {selectedTz.flag} 6 Batches ({convertBatch("05:30 AM – 06:00 AM (Morning)").convertedTime})
                             </span>
                           </div>
                         </div>

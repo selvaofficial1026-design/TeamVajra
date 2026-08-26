@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
 import VajraAlertModal from "@/components/VajraAlertModal";
-import { useVajraTimezone } from "@/lib/timezone";
+import { useVajraTimezone, VAJRA_BATCHES } from "@/lib/timezone";
 import TimezoneSelector from "@/components/TimezoneSelector";
 import { 
   MessageSquare, User, Phone, CheckCircle2, Shield, ArrowRight, 
@@ -30,7 +30,7 @@ export default function AuthPage() {
   const [regPhone, setRegPhone] = useState("");
   const [regCourse, setRegCourse] = useState("FITNESS");
   const [regAgeGroup, setRegAgeGroup] = useState("Adult (18–45 yrs)");
-  const [regBatchTime, setRegBatchTime] = useState("Morning (05:30 AM – 07:30 AM)");
+  const [regBatchTime, setRegBatchTime] = useState("05:30 AM – 06:00 AM (Morning)");
   
   // Tracking Code & Access Code State
   const [generatedCode, setGeneratedCode] = useState("");
@@ -427,15 +427,11 @@ export default function AuthPage() {
                           onChange={(e) => setRegBatchTime(e.target.value)}
                           className="w-full px-3 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-xs sm:text-xs font-semibold focus:border-blue-500 focus:outline-none transition"
                         >
-                          <option value="Morning (05:30 AM – 07:30 AM)">
-                            {convertBatch("Morning (05:30 AM – 07:30 AM)").fullLabel}
-                          </option>
-                          <option value="Evening (05:00 PM – 07:00 PM)">
-                            {convertBatch("Evening (05:00 PM – 07:00 PM)").fullLabel}
-                          </option>
-                          <option value="Night (07:00 PM – 08:30 PM)">
-                            {convertBatch("Night (07:00 PM – 08:30 PM)").fullLabel}
-                          </option>
+                          {VAJRA_BATCHES.map((batch) => (
+                            <option key={batch.id} value={batch.defaultLabel}>
+                              {convertBatch(batch.defaultLabel).fullLabel}
+                            </option>
+                          ))}
                         </select>
                       </div>
 

@@ -13,7 +13,7 @@ import {
   listenToMessagesCloud, 
   isFirebaseConfigured 
 } from "@/lib/firebase";
-import { useVajraTimezone } from "@/lib/timezone";
+import { useVajraTimezone, VAJRA_BATCHES } from "@/lib/timezone";
 import TimezoneSelector from "@/components/TimezoneSelector";
 import { 
   User, KeyRound, LogOut, 
@@ -75,7 +75,7 @@ export default function AdminPortalPage() {
   const [newStudentPhone, setNewStudentPhone] = useState("");
   const [newStudentCourse, setNewStudentCourse] = useState("SILAMBAM");
   const [newStudentAgeGroup, setNewStudentAgeGroup] = useState("Adult (18–45 yrs)");
-  const [newStudentBatch, setNewStudentBatch] = useState("Morning (05:30 AM – 07:30 AM)");
+  const [newStudentBatch, setNewStudentBatch] = useState("05:30 AM – 06:00 AM (Morning)");
   const [customCode, setCustomCode] = useState("");
 
   // Edit Student Modal State
@@ -1563,15 +1563,17 @@ export default function AdminPortalPage() {
               </div>
 
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Assigned Batch Timing</label>
+                <label className="block text-slate-300 font-medium mb-1">Assigned Batch Timing ({selectedTz.code})</label>
                 <select
                   value={newStudentBatch}
                   onChange={(e) => setNewStudentBatch(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#141A2E] border border-slate-700 text-white focus:outline-none"
                 >
-                  <option value="Morning (05:30 AM – 07:30 AM)">Morning (05:30 AM – 07:30 AM)</option>
-                  <option value="Evening (05:00 PM – 06:30 PM)">Evening (05:00 PM – 06:30 PM)</option>
-                  <option value="Night (07:00 PM – 08:30 PM)">Night (07:00 PM – 08:30 PM)</option>
+                  {VAJRA_BATCHES.map((batch) => (
+                    <option key={batch.id} value={batch.defaultLabel}>
+                      {convertBatch(batch.defaultLabel).fullLabel}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1664,6 +1666,21 @@ export default function AdminPortalPage() {
                     <option value="ALL-ACCESS TRACK">All-Access Track</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Assigned Batch Timing ({selectedTz.code})</label>
+                <select
+                  value={editingStudent.batchTime}
+                  onChange={(e) => setEditingStudent({ ...editingStudent, batchTime: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#141A2E] border border-slate-700 text-white focus:outline-none"
+                >
+                  {VAJRA_BATCHES.map((batch) => (
+                    <option key={batch.id} value={batch.defaultLabel}>
+                      {convertBatch(batch.defaultLabel).fullLabel}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2.5 pt-2">
