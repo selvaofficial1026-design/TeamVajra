@@ -381,6 +381,32 @@ export class VajraStudentStore {
     return true;
   }
 
+  static getAdminPassword(): string {
+    if (typeof window === 'undefined') return '123';
+    try {
+      return localStorage.getItem('vajra_admin_password') || '123';
+    } catch {
+      return '123';
+    }
+  }
+
+  static setAdminPassword(newPassword: string): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      localStorage.setItem('vajra_admin_password', newPassword);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static verifyAdminCredentials(user: string, pass: string): boolean {
+    const currentPass = this.getAdminPassword();
+    const cleanUser = user.trim().toLowerCase();
+    const cleanPass = pass.trim();
+    return (cleanUser === 'admin') && (cleanPass === currentPass || (currentPass === '123' && cleanPass.toLowerCase() === 'admin'));
+  }
+
   static isAdminAuthenticated(): boolean {
     if (typeof window === 'undefined') return false;
     try {
