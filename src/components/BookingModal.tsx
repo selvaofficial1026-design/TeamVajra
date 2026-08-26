@@ -428,34 +428,55 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
             )}
 
             {/* =========================================================================
-                TAB 2: TRACK APPROVAL STATUS
+                TAB 2: TRACK APPROVAL STATUS (TEAM VAJRA LOGO THEME)
                ========================================================================= */}
             {authTab === "track" && (
               <div className="space-y-4 animate-fade-in">
+                
+                {/* Brand Mini Header */}
+                <div className="p-3 rounded-xl bg-[#090C16] border border-slate-800 flex items-center gap-2.5">
+                  <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-amber-400/40 bg-black shrink-0 p-0.5 shadow-sm shadow-amber-500/10">
+                    <Image
+                      src="/vajra-logo.jpg"
+                      alt="Team Vajra Emblem"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono uppercase font-bold text-amber-400 tracking-wider block">
+                      ADMISSION STATUS DESK
+                    </span>
+                    <span className="text-[11px] text-slate-300">
+                      Track your admission approval in real-time
+                    </span>
+                  </div>
+                </div>
+
                 <form onSubmit={handleTrackStatus} className="space-y-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                       Tracking Reference Code or Phone *
                     </label>
                     <div className="relative">
-                      <Search className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5 shrink-0" />
+                      <Search className="w-4 h-4 text-sky-400 absolute left-3.5 top-3.5 shrink-0" />
                       <input
                         type="text"
                         required
                         placeholder="e.g. REQ-4819 or 9876543210"
                         value={trackInput}
                         onChange={(e) => setTrackInput(e.target.value)}
-                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700 text-white text-base sm:text-xs font-mono uppercase focus:border-blue-500 focus:outline-none transition placeholder:normal-case placeholder:text-slate-500"
+                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/80 text-white text-base sm:text-xs font-mono uppercase focus:border-sky-400 focus:outline-none transition placeholder:normal-case placeholder:text-slate-500 shadow-inner"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full min-h-[44px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                    className="w-full min-h-[44px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-95"
                   >
                     <Search className="w-4 h-4" />
-                    <span>Check Approval Status</span>
+                    <span>Check Status</span>
                   </button>
                 </form>
 
@@ -463,45 +484,52 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                 {trackSearched && (
                   <div className="pt-1">
                     {!trackedStudent ? (
-                      <div className="p-4 rounded-2xl bg-red-950/30 border border-red-500/30 text-center space-y-1 text-xs">
-                        <AlertCircle className="w-5 h-5 text-red-400 mx-auto" />
-                        <strong className="text-white block">No Record Found</strong>
-                        <p className="text-slate-400">
-                          Please verify your Tracking Reference Code or registered phone number.
+                      <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-950/40 via-[#180E12] to-[#0F080A] border border-rose-500/40 text-center space-y-1.5 text-xs shadow-xl">
+                        <AlertCircle className="w-5 h-5 text-rose-400 mx-auto" />
+                        <strong className="text-white block text-sm font-bold">No Record Found</strong>
+                        <p className="text-slate-300 leading-relaxed">
+                          No admission request found for <span className="font-mono text-rose-300">{trackInput}</span>.
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          Please verify your 10-digit phone or exact Tracking Code (e.g. <span className="font-mono text-amber-400">REQ-XXXX</span>).
                         </p>
                       </div>
                     ) : trackedStudent.approvalStatus === "PENDING_APPROVAL" ? (
-                      <div className="p-4 rounded-2xl bg-[#141A2E] border border-amber-500/40 text-left space-y-2.5 shadow-xl text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 animate-spin" />
-                            <span>Waiting for Admin Approval</span>
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#161D32] via-[#0F1424] to-[#0A0D18] border border-amber-500/50 text-left space-y-3 shadow-2xl text-xs ring-1 ring-amber-500/20">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                            <span>WAITING FOR ADMIN APPROVAL</span>
                           </span>
-                          <span className="font-mono text-[11px] text-slate-400 font-bold">
-                            {trackedStudent.accessCode}
+                          <span className="font-mono text-xs text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+                            {trackedStudent.requestCode || trackedStudent.accessCode}
                           </span>
                         </div>
-                        <p className="text-slate-200">
-                          Hello <strong>{trackedStudent.name}</strong>, your application for <strong>{trackedStudent.course}</strong> is currently under review.
+                        <p className="text-slate-200 leading-relaxed">
+                          Hello <strong className="text-white">{trackedStudent.name}</strong>, your application for <strong className="text-sky-400">{trackedStudent.course}</strong> is currently under review by Academy Admin.
                         </p>
-                        <p className="text-[11px] text-amber-300">
-                          Once approved by the admin, your official Access Code will unlock here!
-                        </p>
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-300 leading-relaxed flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>Once approved, your permanent Access Code will unlock here.</span>
+                        </div>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-2xl bg-[#0F1D33] border border-emerald-500/50 text-left space-y-3 shadow-2xl text-xs">
-                        <div className="flex items-center justify-between">
+                      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#0E2038] via-[#0C172B] to-[#070D18] border border-emerald-500/50 text-left space-y-3.5 shadow-2xl text-xs ring-1 ring-emerald-500/30">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
                           <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                             <span>ADMISSION APPROVED!</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-400 font-mono font-bold uppercase tracking-wider">
+                            ACTIVE PASS
                           </span>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-[#070B16] border border-blue-500/40 text-center space-y-1">
-                          <span className="text-[10px] uppercase font-mono text-slate-400 block">
+                        <div className="p-3.5 rounded-xl bg-[#070B16] border border-sky-500/40 text-center space-y-1 shadow-inner">
+                          <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
                             Your Permanent Student Access Code
                           </span>
-                          <div className="text-xl font-black text-blue-400 font-mono tracking-wider">
+                          <div className="text-2xl font-black text-sky-400 font-mono tracking-widest">
                             {trackedStudent.accessCode}
                           </div>
                         </div>
@@ -512,7 +540,7 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                             VajraStudentStore.setStudent(trackedStudent);
                             handleEnterPortal();
                           }}
-                          className="w-full min-h-[44px] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                          className="w-full min-h-[44px] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 active:scale-95"
                         >
                           <span>Enter Student Portal</span>
                           <ArrowRight className="w-4 h-4" />

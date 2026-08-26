@@ -438,34 +438,55 @@ export default function AuthPage() {
                 )}
 
                 {/* =========================================================================
-                    TAB 2: TRACK APPROVAL STATUS
+                    TAB 2: TRACK APPROVAL STATUS (TEAM VAJRA LOGO THEME)
                    ========================================================================= */}
                 {authMode === "track" && (
                   <div className="space-y-4 animate-fade-in">
+                    
+                    {/* Brand Mini Header */}
+                    <div className="p-3 rounded-xl bg-[#090C16] border border-slate-800 flex items-center gap-2.5">
+                      <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-amber-400/40 bg-black shrink-0 p-0.5 shadow-sm shadow-amber-500/10">
+                        <Image
+                          src="/vajra-logo.jpg"
+                          alt="Team Vajra Emblem"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-mono uppercase font-bold text-amber-400 tracking-wider block">
+                          ADMISSION TRACKING DESK
+                        </span>
+                        <span className="text-[11px] text-slate-300">
+                          Check real-time application & approval status
+                        </span>
+                      </div>
+                    </div>
+
                     <form onSubmit={handleTrackStatus} className="space-y-3.5">
                       <div>
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                           Enter Tracking Reference Code or Phone
                         </label>
                         <div className="relative">
-                          <Search className="w-4 h-4 text-blue-400 absolute left-3.5 top-3 sm:top-3.5" />
+                          <Search className="w-4 h-4 text-sky-400 absolute left-3.5 top-3 sm:top-3.5" />
                           <input
                             type="text"
                             required
                             placeholder="e.g. REQ-4819 or 9876543210"
                             value={trackInput}
                             onChange={(e) => setTrackInput(e.target.value)}
-                            className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-slate-700 text-white text-sm focus:border-blue-500 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500"
+                            className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-slate-700/80 text-white text-sm focus:border-sky-400 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500 shadow-inner"
                           />
                         </div>
                       </div>
 
                       <button
                         type="submit"
-                        className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-95"
+                        className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-95"
                       >
                         <Search className="w-4 h-4" />
-                        <span>Check Approval Status</span>
+                        <span>Check Status</span>
                       </button>
                     </form>
 
@@ -478,13 +499,13 @@ export default function AuthPage() {
                               <ShieldAlert className="w-5 h-5" />
                             </div>
                             <strong className="text-sm font-bold text-white block">
-                              No Application Found
+                              No Application Record Found
                             </strong>
                             <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                              We could not locate any pending or active admission matching <strong className="text-rose-300 font-mono">{trackInput}</strong>.
+                              No admission record found matching <strong className="text-rose-300 font-mono">{trackInput}</strong>.
                             </p>
                             <div className="pt-1 text-[11px] text-slate-400">
-                              Tip: Double-check your 10-digit WhatsApp number or exact Tracking Code (e.g. <span className="font-mono text-slate-300">REQ-XXXX</span>).
+                              Please verify your 10-digit phone or exact Tracking Code (e.g. <span className="font-mono text-amber-400">REQ-XXXX</span>).
                             </div>
                           </div>
                         ) : trackedStudent.approvalStatus === "PENDING_APPROVAL" ? (
@@ -492,8 +513,8 @@ export default function AuthPage() {
                             
                             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                               <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 animate-spin" />
-                                <span>UNDER EXECUTIVE REVIEW</span>
+                                <Clock className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                                <span>WAITING FOR ADMIN APPROVAL</span>
                               </span>
                               <span className="font-mono text-xs text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
                                 {trackedStudent.requestCode || trackedStudent.accessCode}
@@ -501,26 +522,27 @@ export default function AuthPage() {
                             </div>
 
                             <p className="text-xs text-slate-200 leading-relaxed">
-                              Hello <strong className="text-white">{trackedStudent.name}</strong>, your application for the <strong className="text-blue-400">{trackedStudent.course}</strong> program is currently being reviewed by the academy admin.
+                              Hello <strong className="text-white">{trackedStudent.name}</strong>, your admission application for <strong className="text-sky-400">{trackedStudent.course}</strong> is currently under review by the Academy Administrator.
                             </p>
 
                             <div className="p-3.5 rounded-xl bg-[#090C16] border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Enrolled Course:</span>
-                                <strong className="text-white">{trackedStudent.course}</strong>
+                                <span className="text-slate-400">Selected Discipline:</span>
+                                <strong className="text-sky-400">{trackedStudent.course}</strong>
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="text-slate-400">Age Cohort:</span>
                                 <strong className="text-slate-200">{trackedStudent.ageGroup}</strong>
                               </div>
                               <div className="flex items-center justify-between">
-                                <span className="text-slate-400">Batch Timing:</span>
-                                <strong className="text-blue-300">{trackedStudent.batchTime}</strong>
+                                <span className="text-slate-400">Assigned Batch:</span>
+                                <strong className="text-amber-300">{trackedStudent.batchTime}</strong>
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300/90 leading-relaxed">
-                              Once approved by the Headmaster, your permanent Athlete Access Code will activate automatically here.
+                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-300 leading-relaxed flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                              <span>Once approved by admin, your official Access Code will unlock here.</span>
                             </div>
                           </div>
                         ) : (
@@ -528,26 +550,26 @@ export default function AuthPage() {
                             
                             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                               <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>ADMISSION APPROVED</span>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>ADMISSION APPROVED!</span>
                               </span>
                               <span className="text-[10px] text-emerald-400 font-mono font-bold uppercase tracking-wider">
-                                PERMANENT PASS
+                                ACTIVE STUDENT PASS
                               </span>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-[#070B16] border border-blue-500/40 text-center space-y-1.5 shadow-inner">
+                            <div className="p-4 rounded-xl bg-[#070B16] border border-sky-500/40 text-center space-y-1.5 shadow-inner">
                               <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
                                 Your Official Student Access Code
                               </span>
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-2xl font-black text-sky-400 font-mono tracking-wider">
+                                <span className="text-2xl sm:text-3xl font-black text-sky-400 font-mono tracking-widest">
                                   {trackedStudent.accessCode}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => handleCopyCode(trackedStudent.accessCode)}
-                                  className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 transition active:scale-95"
+                                  className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-sky-300 border border-sky-500/30 transition active:scale-95"
                                   title="Copy Code"
                                 >
                                   {codeCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -561,7 +583,7 @@ export default function AuthPage() {
                                 VajraStudentStore.setStudent(trackedStudent);
                                 triggerWelcomeTransition(trackedStudent.accessCode, trackedStudent.name, trackedStudent.course);
                               }}
-                              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 active:scale-95"
+                              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 active:scale-95"
                             >
                               <span>Enter Student Portal</span>
                               <ArrowRight className="w-4 h-4" />
