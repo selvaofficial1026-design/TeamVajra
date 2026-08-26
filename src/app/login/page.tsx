@@ -9,14 +9,17 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
 import VajraAlertModal from "@/components/VajraAlertModal";
+import { useVajraTimezone } from "@/lib/timezone";
+import TimezoneSelector from "@/components/TimezoneSelector";
 import { 
   MessageSquare, User, Phone, CheckCircle2, Shield, ArrowRight, 
   KeyRound, Sparkles, Dumbbell, Flame, Copy, Check, LogIn, AlertCircle,
-  Search, Clock, RefreshCw, ShieldAlert, ShieldCheck, Sparkle, ExternalLink
+  Search, Clock, RefreshCw, ShieldAlert, ShieldCheck, Sparkle, ExternalLink, Globe
 } from "lucide-react";
 
 export default function AuthPage() {
   const router = useRouter();
+  const { selectedTz, convertBatch, liveTime } = useVajraTimezone();
   const [authMode, setAuthMode] = useState<"register" | "login" | "track">("register");
 
   // Custom System Notice Modal State
@@ -240,6 +243,12 @@ export default function AuthPage() {
             {!isSuccess ? (
               <div className="space-y-5">
                 
+                {/* World Clock Country Selector for Login Page */}
+                <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
+                  <span className="text-[11px] text-slate-400 font-medium">Academy World Clock / Country:</span>
+                  <TimezoneSelector compact className="text-[11px] py-1 px-2" />
+                </div>
+
                 {/* 3 Mode Selector Tabs */}
                 <div className="grid grid-cols-3 p-1 rounded-2xl bg-[#13192B] border border-slate-700/70 gap-1 text-[11px] sm:text-xs font-bold">
                   <button
@@ -411,16 +420,22 @@ export default function AuthPage() {
 
                       <div>
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                          Assigned Batch Schedule
+                          Assigned Batch Schedule ({selectedTz.code})
                         </label>
                         <select
                           value={regBatchTime}
                           onChange={(e) => setRegBatchTime(e.target.value)}
                           className="w-full px-3 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-xs sm:text-xs font-semibold focus:border-blue-500 focus:outline-none transition"
                         >
-                          <option value="Morning (05:30 AM – 07:30 AM)">Morning (05:30 AM – 07:30 AM)</option>
-                          <option value="Evening (05:00 PM – 06:30 PM)">Evening (05:00 PM – 06:30 PM)</option>
-                          <option value="Night (07:00 PM – 08:30 PM)">Night (07:00 PM – 08:30 PM)</option>
+                          <option value="Morning (05:30 AM – 07:30 AM)">
+                            {convertBatch("Morning (05:30 AM – 07:30 AM)").fullLabel}
+                          </option>
+                          <option value="Evening (05:00 PM – 07:00 PM)">
+                            {convertBatch("Evening (05:00 PM – 07:00 PM)").fullLabel}
+                          </option>
+                          <option value="Night (07:00 PM – 08:30 PM)">
+                            {convertBatch("Night (07:00 PM – 08:30 PM)").fullLabel}
+                          </option>
                         </select>
                       </div>
 

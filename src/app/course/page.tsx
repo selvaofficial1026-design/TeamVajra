@@ -7,12 +7,14 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BookingModal from "@/components/BookingModal";
 import { SlideFromLeft, PopUpCard, FadeUp } from "@/components/ScrollAnimations";
+import { useVajraTimezone } from "@/lib/timezone";
 import { 
   Dumbbell, Sparkles, Shield, Flame, CheckCircle2, Clock, Users, 
-  ArrowRight, ChevronRight, Zap
+  ArrowRight, ChevronRight, Zap, Globe
 } from "lucide-react";
 
 export default function CoursePage() {
+  const { selectedTz, convertBatch } = useVajraTimezone();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [bookingCourse, setBookingCourse] = useState("FITNESS");
 
@@ -170,12 +172,24 @@ export default function CoursePage() {
                           ))}
                         </div>
 
-                        {/* Cohort Indicator */}
-                        <div className="p-3 rounded-xl bg-[#13192B] border border-slate-700/60 text-xs flex items-center justify-between text-slate-300">
-                          <span className="text-[11px] font-mono text-slate-400 uppercase">Age Group</span>
-                          <div className="flex items-center gap-1.5 text-white font-medium">
-                            <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                            <span>{c.ageGroup}</span>
+                        {/* Cohort & Batch Timing Indicators */}
+                        <div className="space-y-1.5">
+                          <div className="p-2.5 rounded-xl bg-[#13192B] border border-slate-700/60 text-xs flex items-center justify-between text-slate-300">
+                            <span className="text-[11px] font-mono text-slate-400 uppercase">Age Group</span>
+                            <div className="flex items-center gap-1.5 text-white font-medium">
+                              <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                              <span>{c.ageGroup}</span>
+                            </div>
+                          </div>
+
+                          <div className="p-2.5 rounded-xl bg-[#090C16] border border-blue-500/20 text-xs flex items-center justify-between text-slate-300">
+                            <span className="text-[11px] font-mono text-blue-400 uppercase flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-blue-400" />
+                              <span>Batches ({selectedTz.code})</span>
+                            </span>
+                            <span className="text-white text-[11px] font-bold text-right truncate">
+                              {selectedTz.flag} {convertBatch("Morning (05:30 AM – 07:30 AM)").convertedTime}
+                            </span>
                           </div>
                         </div>
                       </div>

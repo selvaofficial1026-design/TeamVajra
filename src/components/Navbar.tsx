@@ -7,7 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore } from "@/lib/store";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
 import VajraAlertModal from "@/components/VajraAlertModal";
-import { Menu, X, ArrowUpRight, User, KeyRound, LogIn, ChevronRight, Clock, Search } from "lucide-react";
+import TimezoneSelector from "@/components/TimezoneSelector";
+import { Menu, X, ArrowUpRight, User, KeyRound, LogIn, ChevronRight, Clock, Search, Globe } from "lucide-react";
 
 interface NavbarProps {
   onOpenBooking: (selectedCourse?: string) => void;
@@ -190,6 +191,9 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 })}
               </nav>
 
+              {/* World Clock & Country Timezone Selector */}
+              <TimezoneSelector compact className="shrink-0" />
+
               {/* Logged-In Student vs Member Login Trigger */}
               {activeStudent ? (
                 <Link
@@ -204,9 +208,9 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 <div className="flex items-center gap-1.5">
                   <Link
                     href="/login"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-all min-h-[38px]"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-blue-400 bg-blue-600/10 border border-blue-500/25 hover:bg-blue-600/20 transition-all min-h-[38px]"
                   >
-                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <Clock className="w-3.5 h-3.5 text-blue-400" />
                     <span>Track Status</span>
                   </Link>
 
@@ -230,17 +234,19 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 href="/course"
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm shadow-blue-500/25 transition-all duration-200 shrink-0 min-h-[38px]"
               >
-                <span>Enroll in Course</span>
+                <span>Enroll</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
             {/* Mobile Actions: Touch targets >= 44px */}
-            <div className="md:hidden flex items-center gap-1 sm:gap-2">
+            <div className="md:hidden flex items-center gap-1.5">
+              <TimezoneSelector compact className="py-1 px-2 text-[11px]" />
+
               {activeStudent ? (
                 <Link
                   href="/portal"
-                  className="min-h-[44px] px-3 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-mono font-bold flex items-center gap-1.5"
+                  className="min-h-[40px] px-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-mono font-bold flex items-center gap-1.5"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{activeStudent.accessCode}</span>
@@ -248,7 +254,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
               ) : (
                 <button
                   onClick={() => setQuickLoginOpen(true)}
-                  className="min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-white/[0.04] border border-white/[0.06] flex items-center justify-center active:scale-95 transition"
+                  className="min-h-[40px] min-w-[40px] rounded-xl text-slate-300 hover:text-white bg-white/[0.04] border border-white/[0.06] flex items-center justify-center active:scale-95 transition"
                   aria-label="Student Login"
                 >
                   <User className="w-4 h-4 text-blue-400" />
@@ -257,7 +263,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="min-h-[44px] min-w-[44px] rounded-xl text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center justify-center active:scale-95 transition"
+                className="min-h-[40px] min-w-[40px] rounded-xl text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center justify-center active:scale-95 transition"
                 aria-label="Toggle Navigation"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -270,6 +276,11 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
         {/* Mobile Menu Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0A0E1A]/98 border-b border-white/[0.08] px-4 pt-3 pb-6 space-y-2 backdrop-blur-2xl shadow-2xl animate-fade-in">
+            {/* World Clock Country Selector for Mobile */}
+            <div className="pb-2 border-b border-white/[0.06]">
+              <TimezoneSelector className="w-full justify-between" />
+            </div>
+
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (

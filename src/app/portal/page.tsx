@@ -6,15 +6,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore, TrainingVideo, VajraMessage } from "@/lib/store";
 import { listenToMeetLinksCloud, listenToVideosCloud, listenToMessagesCloud } from "@/lib/firebase";
+import { useVajraTimezone } from "@/lib/timezone";
+import TimezoneSelector from "@/components/TimezoneSelector";
 import { 
   User, Shield, Flame, Dumbbell, Sparkles, CheckCircle2, 
   Copy, Check, LogOut, MessageSquare, Phone, ChevronRight, 
   ChevronLeft, Video, Play, ExternalLink, Radio, Pause, 
-  Calendar, Clock, Award, Send
+  Calendar, Clock, Award, Send, Globe
 } from "lucide-react";
 
 export default function StudentPortalPage() {
   const router = useRouter();
+  const { selectedTz, convertBatch, liveTime } = useVajraTimezone();
   const [student, setStudent] = useState<VajraStudent | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "videos" | "meet" | "doubt">("profile");
@@ -263,10 +266,12 @@ export default function StudentPortalPage() {
               })}
             </nav>
 
-            {/* Student Code & Logout */}
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            {/* Student Code, Timezone Selector & Logout */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              <TimezoneSelector compact className="shrink-0" />
+
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0F1424] border border-slate-800 text-xs">
-                <span className="text-slate-400">Student Code:</span>
+                <span className="text-slate-400">Code:</span>
                 <span className="font-mono font-bold text-blue-400">{student.accessCode}</span>
               </div>
 
@@ -340,8 +345,12 @@ export default function StudentPortalPage() {
                     </span>
                   </div>
                   <h3 className="text-xs sm:text-base font-bold text-white leading-snug break-words">
-                    Coach posted a Google Meet class link for <span className="text-blue-400">{student.course}</span>!
+                    Coach posted Google Meet link for <span className="text-blue-400">{student.course}</span>!
                   </h3>
+                  <p className="text-[11px] text-slate-300 flex items-center gap-1.5 pt-0.5">
+                    <span>Your Local Batch:</span>
+                    <strong className="text-blue-400 font-mono font-bold">{selectedTz.flag} {convertBatch(student.batchTime).convertedTime}</strong>
+                  </p>
                 </div>
               </div>
 
@@ -493,9 +502,16 @@ export default function StudentPortalPage() {
                     {/* Batch Timing */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
                       <span className="text-slate-400 font-medium shrink-0">Batch Schedule</span>
-                      <span className="text-slate-200 text-right text-[11px] sm:text-xs font-medium break-words">
-                        {student.batchTime}
-                      </span>
+                      <div className="text-right space-y-0.5">
+                        <span className="text-blue-400 font-bold block text-xs">
+                          {selectedTz.flag} {convertBatch(student.batchTime).convertedTime}
+                        </span>
+                        {selectedTz.id !== "IST" && (
+                          <span className="text-[10px] text-slate-400 font-mono block">
+                            ({convertBatch(student.batchTime).originalIst})
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Registered Phone */}
@@ -791,8 +807,10 @@ export default function StudentPortalPage() {
                   <strong className="text-white text-sm block">{student.course}</strong>
                 </div>
                 <div className="p-3.5 sm:p-4 rounded-xl bg-[#141A2E] border border-slate-800 space-y-1">
-                  <span className="text-slate-400 block">Scheduled Batch</span>
-                  <strong className="text-blue-400 text-sm block">{student.batchTime}</strong>
+                  <span className="text-slate-400 block">Scheduled Batch ({selectedTz.code})</span>
+                  <strong className="text-blue-400 text-sm block">
+                    {selectedTz.flag} {convertBatch(student.batchTime).convertedTime}
+                  </strong>
                 </div>
                 <div className="p-3.5 sm:p-4 rounded-xl bg-[#141A2E] border border-slate-800 space-y-1">
                   <span className="text-slate-400 block">Platform</span>

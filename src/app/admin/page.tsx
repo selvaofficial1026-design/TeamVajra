@@ -10,18 +10,21 @@ import {
   listenToStudentsCloud, 
   listenToMeetLinksCloud, 
   listenToVideosCloud, 
-  listenToMessagesCloud,
+  listenToMessagesCloud, 
   isFirebaseConfigured 
 } from "@/lib/firebase";
+import { useVajraTimezone } from "@/lib/timezone";
+import TimezoneSelector from "@/components/TimezoneSelector";
 import { 
   User, KeyRound, LogOut, 
   Search, Plus, Trash2, Edit2, CheckCircle2, AlertCircle, 
   MessageSquare, Radio, Users, Video, ExternalLink, 
-  X, Save, Sparkles, Loader2, Clock, Phone, Cloud, Send
+  X, Save, Sparkles, Loader2, Clock, Phone, Cloud, Send, Globe
 } from "lucide-react";
 
 export default function AdminPortalPage() {
   const router = useRouter();
+  const { selectedTz, convertBatch, liveTime } = useVajraTimezone();
 
   // Custom Brand System Notice State
   const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
@@ -594,7 +597,9 @@ export default function AdminPortalPage() {
             </nav>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              <TimezoneSelector compact className="shrink-0" />
+
               <Link
                 href="/portal"
                 target="_blank"

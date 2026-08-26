@@ -4,10 +4,12 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore } from "@/lib/store";
+import { useVajraTimezone } from "@/lib/timezone";
+import TimezoneSelector from "./TimezoneSelector";
 import VajraAlertModal from "./VajraAlertModal";
 import { 
   X, CheckCircle2, ArrowRight, MessageSquare, User, 
-  KeyRound, Copy, Check, LogIn, AlertCircle, Clock, Shield, Search
+  KeyRound, Copy, Check, LogIn, AlertCircle, Clock, Shield, Search, Globe
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -18,6 +20,7 @@ interface BookingModalProps {
 
 export default function BookingModal({ isOpen, onClose, initialArt }: BookingModalProps) {
   const router = useRouter();
+  const { selectedTz, convertBatch, liveTime } = useVajraTimezone();
   const [authTab, setAuthTab] = useState<"register" | "track" | "login">("register");
 
   // Registration Form State
@@ -218,24 +221,28 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
         {!isSuccess ? (
           <div>
             
-            {/* Header with Team Vajra Logo */}
-            <div className="flex items-center gap-3 mb-5 pr-8">
-              <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 bg-[#06080F]/90 shrink-0 p-1">
-                <Image
-                  src="/vajra-logo.jpg"
-                  alt="Team Vajra Emblem"
-                  fill
-                  className="object-contain"
-                />
+            {/* Header with Team Vajra Logo & Timezone Selector */}
+            <div className="flex items-center justify-between gap-3 mb-5 pr-10">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-white/20 bg-[#06080F]/90 shrink-0 p-1">
+                  <Image
+                    src="/vajra-logo.jpg"
+                    alt="Team Vajra Emblem"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono font-bold tracking-wider text-blue-400 uppercase block">
+                    TEAM VAJRA ADMISSIONS
+                  </span>
+                  <h3 className="font-display text-sm sm:text-base md:text-lg font-bold text-white tracking-tight truncate">
+                    Academy Portal Desk
+                  </h3>
+                </div>
               </div>
-              <div className="min-w-0">
-                <span className="text-[10px] font-mono font-bold tracking-wider text-blue-400 uppercase block">
-                  TEAM VAJRA ADMISSIONS
-                </span>
-                <h3 className="font-display text-base sm:text-lg md:text-xl font-bold text-white tracking-tight truncate">
-                  Academy Registration & Login
-                </h3>
-              </div>
+
+              <TimezoneSelector compact className="shrink-0 hidden xs:inline-flex text-[11px] py-1 px-2" />
             </div>
 
             {/* 3 Mode Switcher Tabs */}
@@ -398,16 +405,22 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Preferred Batch *
+                      Preferred Batch ({selectedTz.code}) *
                     </label>
                     <select
                       value={regBatchTime}
                       onChange={(e) => setRegBatchTime(e.target.value)}
                       className="w-full min-h-[44px] px-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-xs font-semibold focus:border-blue-500 focus:outline-none transition"
                     >
-                      <option value="Morning (05:30 AM – 07:30 AM)">Morning (05:30 AM – 07:30 AM)</option>
-                      <option value="Evening (05:00 PM – 07:00 PM)">Evening (05:00 PM – 07:00 PM)</option>
-                      <option value="Night (07:00 PM – 08:30 PM)">Night (07:00 PM – 08:30 PM)</option>
+                      <option value="Morning (05:30 AM – 07:30 AM)">
+                        {convertBatch("Morning (05:30 AM – 07:30 AM)").fullLabel}
+                      </option>
+                      <option value="Evening (05:00 PM – 07:00 PM)">
+                        {convertBatch("Evening (05:00 PM – 07:00 PM)").fullLabel}
+                      </option>
+                      <option value="Night (07:00 PM – 08:30 PM)">
+                        {convertBatch("Night (07:00 PM – 08:30 PM)").fullLabel}
+                      </option>
                     </select>
                   </div>
 
