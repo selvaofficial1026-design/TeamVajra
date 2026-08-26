@@ -438,14 +438,14 @@ export default function AuthPage() {
                 )}
 
                 {/* =========================================================================
-                    TAB 2: TRACK APPROVAL STATUS (TEAM VAJRA LOGO THEME)
+                    TAB 2: TRACK APPROVAL STATUS (UNIFIED TEAM VAJRA BLUE THEME)
                    ========================================================================= */}
                 {authMode === "track" && (
                   <div className="space-y-4 animate-fade-in">
                     
                     {/* Brand Mini Header */}
-                    <div className="p-3 rounded-xl bg-[#090C16] border border-slate-800 flex items-center gap-2.5">
-                      <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-amber-400/40 bg-black shrink-0 p-0.5 shadow-sm shadow-amber-500/10">
+                    <div className="p-3 rounded-xl bg-[#090C16] border border-blue-500/30 flex items-center gap-2.5">
+                      <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-blue-500/50 bg-black shrink-0 p-0.5 shadow-sm shadow-blue-500/10">
                         <Image
                           src="/vajra-logo.jpg"
                           alt="Team Vajra Emblem"
@@ -454,7 +454,7 @@ export default function AuthPage() {
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] font-mono uppercase font-bold text-amber-400 tracking-wider block">
+                        <span className="text-[10px] font-mono uppercase font-bold text-blue-400 tracking-wider block">
                           ADMISSION TRACKING DESK
                         </span>
                         <span className="text-[11px] text-slate-300">
@@ -469,14 +469,14 @@ export default function AuthPage() {
                           Enter Tracking Reference Code or Phone
                         </label>
                         <div className="relative">
-                          <Search className="w-4 h-4 text-sky-400 absolute left-3.5 top-3 sm:top-3.5" />
+                          <Search className="w-4 h-4 text-blue-400 absolute left-3.5 top-3 sm:top-3.5" />
                           <input
                             type="text"
                             required
                             placeholder="e.g. REQ-4819 or 9876543210"
                             value={trackInput}
                             onChange={(e) => setTrackInput(e.target.value)}
-                            className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-slate-700/80 text-white text-sm focus:border-sky-400 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500 shadow-inner"
+                            className="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl bg-[#13192B] border border-blue-500/30 text-white text-sm focus:border-blue-400 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500 shadow-inner"
                           />
                         </div>
                       </div>
@@ -494,41 +494,41 @@ export default function AuthPage() {
                     {trackSearched && (
                       <div className="pt-2">
                         {!trackedStudent ? (
-                          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-950/40 via-[#180E12] to-[#0F080A] border border-rose-500/40 text-center space-y-2 animate-fade-in shadow-xl">
-                            <div className="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
+                          <div className="p-4 sm:p-5 rounded-2xl bg-[#0D1220] border border-blue-500/30 text-center space-y-2 animate-fade-in shadow-xl">
+                            <div className="w-10 h-10 rounded-full bg-blue-600/15 border border-blue-500/30 flex items-center justify-center mx-auto text-blue-400">
                               <ShieldAlert className="w-5 h-5" />
                             </div>
                             <strong className="text-sm font-bold text-white block">
                               No Application Record Found
                             </strong>
                             <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                              No admission record found matching <strong className="text-rose-300 font-mono">{trackInput}</strong>.
+                              No admission record found matching <strong className="text-blue-300 font-mono">{trackInput}</strong>.
                             </p>
                             <div className="pt-1 text-[11px] text-slate-400">
-                              Please verify your 10-digit phone or exact Tracking Code (e.g. <span className="font-mono text-amber-400">REQ-XXXX</span>).
+                              Please verify your 10-digit phone or exact Tracking Code (e.g. <span className="font-mono text-blue-400">REQ-XXXX</span>).
                             </div>
                           </div>
                         ) : trackedStudent.approvalStatus === "PENDING_APPROVAL" ? (
-                          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#161D32] via-[#0F1424] to-[#0A0D18] border border-amber-500/50 text-left space-y-3.5 shadow-2xl animate-fade-in ring-1 ring-amber-500/20">
+                          <div className="p-5 rounded-2xl bg-[#0D1220] border border-blue-500/40 text-left space-y-3.5 shadow-2xl animate-fade-in">
                             
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                              <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                            <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 animate-spin text-blue-400" />
                                 <span>WAITING FOR ADMIN APPROVAL</span>
                               </span>
-                              <span className="font-mono text-xs text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">
+                              <span className="font-mono text-xs text-blue-400 font-bold bg-blue-950/60 px-2 py-0.5 rounded border border-blue-500/30">
                                 {trackedStudent.requestCode || trackedStudent.accessCode}
                               </span>
                             </div>
 
                             <p className="text-xs text-slate-200 leading-relaxed">
-                              Hello <strong className="text-white">{trackedStudent.name}</strong>, your admission application for <strong className="text-sky-400">{trackedStudent.course}</strong> is currently under review by the Academy Administrator.
+                              Hello <strong className="text-white">{trackedStudent.name}</strong>, your admission application for <strong className="text-blue-400">{trackedStudent.course}</strong> is currently under review by the Academy Administrator.
                             </p>
 
-                            <div className="p-3.5 rounded-xl bg-[#090C16] border border-slate-800 text-[11px] text-slate-300 space-y-1.5">
+                            <div className="p-3.5 rounded-xl bg-[#090C16] border border-blue-500/20 text-[11px] text-slate-300 space-y-1.5">
                               <div className="flex items-center justify-between">
                                 <span className="text-slate-400">Selected Discipline:</span>
-                                <strong className="text-sky-400">{trackedStudent.course}</strong>
+                                <strong className="text-blue-400">{trackedStudent.course}</strong>
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="text-slate-400">Age Cohort:</span>
@@ -536,43 +536,43 @@ export default function AuthPage() {
                               </div>
                               <div className="flex items-center justify-between">
                                 <span className="text-slate-400">Assigned Batch:</span>
-                                <strong className="text-amber-300">{trackedStudent.batchTime}</strong>
+                                <strong className="text-blue-300">{trackedStudent.batchTime}</strong>
                               </div>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-300 leading-relaxed flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                            <div className="p-2.5 rounded-xl bg-blue-600/10 border border-blue-500/20 text-[11px] text-blue-300 leading-relaxed flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-blue-400 shrink-0" />
                               <span>Once approved by admin, your official Access Code will unlock here.</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0E2038] via-[#0C172B] to-[#070D18] border border-emerald-500/50 text-left space-y-3.5 shadow-2xl animate-fade-in ring-1 ring-emerald-500/30">
+                          <div className="p-5 rounded-2xl bg-[#0D1220] border border-blue-500/40 text-left space-y-3.5 shadow-2xl animate-fade-in">
                             
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
+                              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30 flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
                                 <span>ADMISSION APPROVED!</span>
                               </span>
-                              <span className="text-[10px] text-emerald-400 font-mono font-bold uppercase tracking-wider">
+                              <span className="text-[10px] text-blue-400 font-mono font-bold uppercase tracking-wider">
                                 ACTIVE STUDENT PASS
                               </span>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-[#070B16] border border-sky-500/40 text-center space-y-1.5 shadow-inner">
+                            <div className="p-4 rounded-xl bg-[#070B16] border border-blue-500/40 text-center space-y-1.5 shadow-inner">
                               <span className="text-[10px] uppercase font-mono text-slate-400 block tracking-wider">
                                 Your Official Student Access Code
                               </span>
                               <div className="flex items-center justify-center gap-2">
-                                <span className="text-2xl sm:text-3xl font-black text-sky-400 font-mono tracking-widest">
+                                <span className="text-2xl sm:text-3xl font-black text-blue-400 font-mono tracking-widest">
                                   {trackedStudent.accessCode}
                                 </span>
                                 <button
                                   type="button"
                                   onClick={() => handleCopyCode(trackedStudent.accessCode)}
-                                  className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-sky-300 border border-sky-500/30 transition active:scale-95"
+                                  className="p-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 transition active:scale-95"
                                   title="Copy Code"
                                 >
-                                  {codeCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                                  {codeCopied ? <Check className="w-4 h-4 text-blue-400" /> : <Copy className="w-4 h-4" />}
                                 </button>
                               </div>
                             </div>
@@ -583,7 +583,7 @@ export default function AuthPage() {
                                 VajraStudentStore.setStudent(trackedStudent);
                                 triggerWelcomeTransition(trackedStudent.accessCode, trackedStudent.name, trackedStudent.course);
                               }}
-                              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-950/50 flex items-center justify-center gap-2 active:scale-95"
+                              className="w-full min-h-[46px] py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/40 flex items-center justify-center gap-2 active:scale-95"
                             >
                               <span>Enter Student Portal</span>
                               <ArrowRight className="w-4 h-4" />
