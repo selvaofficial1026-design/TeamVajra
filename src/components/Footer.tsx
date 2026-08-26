@@ -26,14 +26,14 @@ export default function Footer() {
         {/* Centered Brand & Icons */}
         <div className="flex flex-col items-center text-center space-y-5">
           
-          {/* Logo & Academy Name */}
+          {/* Logo & Academy Name (Clean, Larger) */}
           <Link href="/" className="flex flex-col items-center gap-2.5 group">
-            <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 border-slate-700/80 bg-black/80 p-1 shadow-xl group-hover:border-blue-500 transition duration-300">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 transition-transform duration-300 group-hover:scale-105">
               <Image 
                 src="/vajra-logo.jpg" 
                 alt="Team Vajra Emblem" 
                 fill 
-                className="object-contain p-0.5"
+                className="object-contain drop-shadow-xl rounded-xl"
                 priority
               />
             </div>

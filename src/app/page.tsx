@@ -166,19 +166,19 @@ export default function HomePage() {
                 </div>
               </FadeUp>
 
-              {/* Grand Logo Emblem (Fluid & Mobile Optimized) */}
+              {/* Grand Logo Emblem (No Box Frame, Larger & Prominent) */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.7, ease: "easeOut" }}
-                className="relative cursor-pointer group pt-1 sm:pt-2 w-full flex justify-center"
+                className="relative cursor-pointer group pt-2 pb-1 w-full flex justify-center"
               >
-                <div className="relative w-full max-w-[270px] sm:max-w-[340px] md:max-w-[380px] h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden border border-slate-700 bg-black/80 shadow-2xl p-3 sm:p-4 flex items-center justify-center">
+                <div className="relative w-full max-w-[320px] sm:max-w-[420px] md:max-w-[500px] lg:max-w-[540px] h-44 sm:h-56 md:h-64 lg:h-72 flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
                   <Image
                     src="/vajra-logo.jpg"
                     alt="Team Vajra Official Logo"
                     fill
-                    className="object-contain p-2"
+                    className="object-contain drop-shadow-[0_12px_40px_rgba(37,99,235,0.25)] rounded-2xl"
                     priority
                   />
                 </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -34,14 +34,14 @@ export default function Hero({ onOpenBooking }: HeroProps) {
             </span>
           </div>
 
-          {/* Logo Badge Floating */}
-          <div className="relative mb-6">
-            <div className="relative w-48 sm:w-64 h-28 sm:h-36 rounded-2xl overflow-hidden border border-white/10 bg-[#06080F]/90 shadow-2xl p-2">
+          {/* Logo Floating (No Box Frame, Larger & Prominent) */}
+          <div className="relative mb-6 flex justify-center">
+            <div className="relative w-64 sm:w-80 md:w-96 h-36 sm:h-48 md:h-56 transition-transform duration-300 hover:scale-105">
               <Image
                 src="/vajra-logo.jpg"
                 alt="Team Vajra Fitness Arts Official Emblem"
                 fill
-                className="object-contain"
+                className="object-contain drop-shadow-[0_12px_40px_rgba(37,99,235,0.25)] rounded-2xl"
                 priority
               />
             </div>

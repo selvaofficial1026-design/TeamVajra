@@ -149,22 +149,22 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             
-            {/* LEFT: Logo & Brand Name */}
-            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0 min-w-0 py-1">
-              <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-white/15 bg-black/60 shadow-sm transition-transform duration-300 group-hover:scale-105 shrink-0">
+            {/* LEFT: Logo & Brand Name (Clean, Box-Free, Larger) */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0 py-0.5">
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 transition-transform duration-300 group-hover:scale-105 shrink-0">
                 <Image 
                   src="/vajra-logo.jpg" 
                   alt="Team Vajra Emblem" 
                   fill 
-                  className="object-contain p-0.5"
+                  className="object-contain drop-shadow-md rounded-lg"
                   priority
                 />
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-display font-bold tracking-tight text-sm sm:text-base md:text-lg text-white group-hover:text-blue-400 transition-colors leading-none truncate">
+                <span className="font-display font-extrabold tracking-tight text-sm sm:text-base md:text-lg text-white group-hover:text-blue-400 transition-colors leading-tight truncate">
                   TEAM VAJRA
                 </span>
-                <span className="text-[9px] sm:text-[10px] tracking-[0.2em] text-slate-400 font-semibold uppercase mt-0.5">
+                <span className="text-[9px] sm:text-[10px] tracking-[0.2em] text-slate-400 font-semibold uppercase">
                   Fitness Arts
                 </span>
               </div>
