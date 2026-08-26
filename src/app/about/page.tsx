@@ -9,7 +9,7 @@ import BookingModal from "@/components/BookingModal";
 import { SlideFromLeft, PopUpCard, FadeUp } from "@/components/ScrollAnimations";
 import { 
   ShieldCheck, Activity, Award, Users2, ArrowRight, CheckCircle2, 
-  ChevronRight, MessageSquare, MapPin, Phone, Flame, Sparkles, Dumbbell
+  ChevronRight, MapPin, Flame, Sparkles, Dumbbell
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -134,23 +134,20 @@ export default function AboutPage() {
 
                 {/* Direct Action */}
                 <div className="pt-3 flex flex-wrap gap-3">
-                  <a
-                    href="https://wa.me/918668102797?text=Hello%20Master,%20I%20would%20like%20to%20know%20more%20about%20your%20training%20batches."
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-2 transition shadow"
+                  <button
+                    onClick={() => setIsBookingOpen(true)}
+                    className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow-md shadow-blue-600/30 flex items-center gap-2"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Chat With Coach on WhatsApp</span>
-                  </a>
+                    <span>Apply for Admission</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
 
-                  <a
-                    href="tel:+918668102797"
-                    className="px-5 py-3 rounded-xl bg-[#141A2E] hover:bg-[#1C253D] text-slate-200 border border-slate-700 font-semibold text-xs flex items-center gap-2 transition"
+                  <Link
+                    href="/course"
+                    className="px-6 py-3.5 rounded-xl bg-[#141A2E] hover:bg-[#1C253D] text-slate-200 border border-slate-700 font-bold text-xs uppercase tracking-wider transition flex items-center gap-2"
                   >
-                    <Phone className="w-4 h-4" />
-                    <span>Call +91 86681 02797</span>
-                  </a>
+                    <span>Explore Courses</span>
+                  </Link>
                 </div>
 
               </div>
@@ -204,7 +201,7 @@ export default function AboutPage() {
               </p>
               <div className="flex items-center gap-2 text-xs text-slate-300 pt-1">
                 <MapPin className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>Main Ring Road, Tamil Nadu, India • +91 86681 02797</span>
+                <span>Main Ring Road, Tamil Nadu, India</span>
               </div>
             </div>
 
