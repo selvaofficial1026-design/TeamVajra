@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore } from "@/lib/store";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
+import VajraAlertModal from "@/components/VajraAlertModal";
 import { Menu, X, ArrowUpRight, User, KeyRound, LogIn, ChevronRight } from "lucide-react";
 
 interface NavbarProps {
@@ -25,6 +26,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
   const pathname = usePathname();
 
   const [isAdminRedirect, setIsAdminRedirect] = useState(false);
+  const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,7 +50,11 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
   const handleQuickLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!quickCode.trim()) {
-      alert("Please enter your Student Access Code or Password.");
+      setSystemAlert({
+        title: "Access Code Required",
+        message: "Please enter your Student Access Code or Password.",
+        type: "warning"
+      });
       return;
     }
 
@@ -387,6 +393,17 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
               router.push("/portal");
             }
           }}
+        />
+      )}
+
+      {/* Brand Theme System Notice Alert Modal */}
+      {systemAlert && (
+        <VajraAlertModal
+          isOpen={true}
+          title={systemAlert.title}
+          message={systemAlert.message}
+          type={systemAlert.type || "warning"}
+          onClose={() => setSystemAlert(null)}
         />
       )}
     </>

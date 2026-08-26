@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { VajraStudentStore } from "@/lib/store";
+import VajraAlertModal from "./VajraAlertModal";
 import { 
   X, CheckCircle2, ArrowRight, MessageSquare, User, 
   KeyRound, Copy, Check, LogIn, AlertCircle
@@ -37,6 +38,9 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   const [isSuccess, setIsSuccess] = useState(false);
   const [successType, setSuccessType] = useState<"register" | "login">("register");
   
+  // Custom System Notice Modal State
+  const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
+
   // Duplicate Phone Error State
   const [phoneExistsError, setPhoneExistsError] = useState<{ name: string; code: string; course: string; phone: string } | null>(null);
 
@@ -56,11 +60,19 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) {
-      alert("Please enter your Full Name.");
+      setSystemAlert({
+        title: "Name Required",
+        message: "Please enter your Full Name to complete registration.",
+        type: "warning"
+      });
       return;
     }
     if (!regPhone || regPhone.length < 10) {
-      alert("Please enter a valid 10-digit WhatsApp number.");
+      setSystemAlert({
+        title: "Valid Number Required",
+        message: "Please enter a valid 10-digit WhatsApp phone number.",
+        type: "warning"
+      });
       return;
     }
 
@@ -111,7 +123,11 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   const handleVerifyLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginCode || loginCode.trim().length === 0) {
-      alert("Please enter or paste your Student Access Code.");
+      setSystemAlert({
+        title: "Access Code Required",
+        message: "Please enter or paste your Student Access Code.",
+        type: "warning"
+      });
       return;
     }
     const code = loginCode.trim().toUpperCase();
@@ -484,6 +500,17 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
         )}
 
       </div>
+
+      {/* Brand Theme System Alert Modal */}
+      {systemAlert && (
+        <VajraAlertModal
+          isOpen={true}
+          title={systemAlert.title}
+          message={systemAlert.message}
+          type={systemAlert.type || "warning"}
+          onClose={() => setSystemAlert(null)}
+        />
+      )}
     </div>
   );
 }

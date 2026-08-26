@@ -8,6 +8,7 @@ import { VajraStudentStore } from "@/lib/store";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
+import VajraAlertModal from "@/components/VajraAlertModal";
 import { 
   MessageSquare, User, Phone, CheckCircle2, Shield, ArrowRight, 
   KeyRound, Sparkles, Dumbbell, Flame, Copy, Check, LogIn, AlertCircle
@@ -16,6 +17,9 @@ import {
 export default function AuthPage() {
   const router = useRouter();
   const [authMode, setAuthMode] = useState<"register" | "login">("register");
+
+  // Custom System Notice Modal State
+  const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
 
   // Registration Form State
   const [regName, setRegName] = useState("");
@@ -61,11 +65,19 @@ export default function AuthPage() {
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) {
-      alert("Please enter your Full Name.");
+      setSystemAlert({
+        title: "Name Required",
+        message: "Please enter your Full Name to proceed with registration.",
+        type: "warning"
+      });
       return;
     }
     if (!regPhone || regPhone.length < 10) {
-      alert("Please enter a valid 10-digit WhatsApp number.");
+      setSystemAlert({
+        title: "Valid Phone Required",
+        message: "Please enter a valid 10-digit WhatsApp number.",
+        type: "warning"
+      });
       return;
     }
 
@@ -123,7 +135,11 @@ export default function AuthPage() {
   const handleVerifyLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginCode || loginCode.trim().length === 0) {
-      alert("Please enter or paste your Student Access Code or Password.");
+      setSystemAlert({
+        title: "Access Code Required",
+        message: "Please enter or paste your Student Access Code or Password.",
+        type: "warning"
+      });
       return;
     }
 
@@ -562,6 +578,17 @@ export default function AuthPage() {
               router.push("/portal");
             }
           }}
+        />
+      )}
+
+      {/* Custom Vajra System Alert Modal */}
+      {systemAlert && (
+        <VajraAlertModal
+          isOpen={true}
+          title={systemAlert.title}
+          message={systemAlert.message}
+          type={systemAlert.type || "warning"}
+          onClose={() => setSystemAlert(null)}
         />
       )}
 

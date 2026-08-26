@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore, TrainingVideo } from "@/lib/store";
+import VajraAlertModal from "@/components/VajraAlertModal";
 import { 
   listenToStudentsCloud, 
   listenToMeetLinksCloud, 
@@ -20,6 +21,9 @@ import {
 
 export default function AdminPortalPage() {
   const router = useRouter();
+
+  // Custom Brand System Notice State
+  const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
 
   // Admin Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -171,13 +175,21 @@ export default function AdminPortalPage() {
   const handleAddStudentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStudentName.trim()) {
-      alert("Please enter member name.");
+      setSystemAlert({
+        title: "Student Name Required",
+        message: "Please enter the member's full name to register.",
+        type: "warning"
+      });
       return;
     }
 
     const existing = VajraStudentStore.getStudentByPhone(newStudentPhone);
     if (existing) {
-      alert(`Student with phone ${newStudentPhone} is already registered (Code: ${existing.accessCode}).`);
+      setSystemAlert({
+        title: "Student Already Registered",
+        message: `Student with phone ${newStudentPhone} is already enrolled as "${existing.name}" (Access Code: ${existing.accessCode}).`,
+        type: "warning"
+      });
       return;
     }
 
@@ -270,7 +282,11 @@ export default function AdminPortalPage() {
   const handleAddVideoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newVidUrl.trim()) {
-      alert("Please enter a YouTube URL.");
+      setSystemAlert({
+        title: "YouTube URL Required",
+        message: "Please enter or paste a valid YouTube video link.",
+        type: "warning"
+      });
       return;
     }
 
@@ -1384,6 +1400,17 @@ export default function AdminPortalPage() {
 
           </div>
         </div>
+      )}
+
+      {/* Custom Brand System Notice Alert Modal */}
+      {systemAlert && (
+        <VajraAlertModal
+          isOpen={true}
+          title={systemAlert.title}
+          message={systemAlert.message}
+          type={systemAlert.type || "warning"}
+          onClose={() => setSystemAlert(null)}
+        />
       )}
 
       {/* FOOTER */}
