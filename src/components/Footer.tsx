@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { 
   Phone, MapPin, Clock, MessageSquare, ArrowUp, ChevronRight,
-  ShieldCheck, Award, Globe, HeartHandshake, CheckCircle2, Lock
+  ShieldCheck, CheckCircle2, Lock, Instagram
 } from "lucide-react";
 
 export default function Footer() {
@@ -50,6 +50,16 @@ export default function Footer() {
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>WhatsApp Desk</span>
+              </a>
+
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-95 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg min-h-[44px] flex-1 sm:flex-initial"
+              >
+                <Instagram className="w-4 h-4" />
+                <span>Instagram</span>
               </a>
 
               <Link
@@ -221,27 +231,54 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 5: Headquarters & Support Desk (2 Cols on Desktop) */}
+          {/* Column 5: Direct Social Links & Address (2 Cols on Desktop) */}
           <div className="col-span-2 md:col-span-2 lg:col-span-2 space-y-3.5">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Academy Desk
+              Connect & Location
             </h4>
-            <div className="space-y-2.5 text-xs text-slate-400">
+            
+            {/* Fixed Address */}
+            <div className="space-y-1 text-xs">
               <div className="flex items-start gap-2">
                 <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-                <span>Main Ring Road, Tamil Nadu, India</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span className="font-mono text-slate-300">+91 86681 02797</span>
-              </div>
-              <div className="pt-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>Admissions Open 2026</span>
+                <div>
+                  <strong className="text-slate-200 block font-medium">Team Vajra Arena</strong>
+                  <span className="text-slate-400 block text-[11px]">Main Ring Road, Tamil Nadu, India</span>
                 </div>
               </div>
             </div>
+
+            {/* Only Instagram, WhatsApp, and Phone */}
+            <div className="space-y-2 pt-1 text-xs">
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-slate-300 hover:text-pink-400 transition py-1"
+              >
+                <Instagram className="w-4 h-4 text-pink-400 shrink-0" />
+                <span>Instagram</span>
+              </a>
+
+              <a
+                href="https://wa.me/918668102797"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 transition py-1"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>WhatsApp</span>
+              </a>
+
+              <a
+                href="tel:+918668102797"
+                className="flex items-center gap-2 text-slate-300 hover:text-blue-400 transition py-1"
+              >
+                <Phone className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>+91 86681 02797</span>
+              </a>
+            </div>
+
           </div>
 
         </div>
