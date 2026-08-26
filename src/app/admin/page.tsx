@@ -6,10 +6,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore, TrainingVideo } from "@/lib/store";
 import { 
+  listenToStudentsCloud, 
+  listenToMeetLinksCloud, 
+  listenToVideosCloud, 
+  isFirebaseConfigured 
+} from "@/lib/firebase";
+import { 
   User, KeyRound, LogOut, 
   Search, Plus, Trash2, Edit2, CheckCircle2, AlertCircle, 
   MessageSquare, Radio, Users, Video, ExternalLink, 
-  X, Save, Sparkles, Loader2, Clock, Phone
+  X, Save, Sparkles, Loader2, Clock, Phone, Cloud
 } from "lucide-react";
 
 export default function AdminPortalPage() {
@@ -20,6 +26,7 @@ export default function AdminPortalPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
+  const [cloudSynced, setCloudSynced] = useState(false);
 
   // Navigation Sub-Tabs in Admin
   const [adminTab, setAdminTab] = useState<"students" | "meet" | "videos">("students");
@@ -68,10 +75,48 @@ export default function AdminPortalPage() {
   useEffect(() => {
     const isAuth = VajraStudentStore.isAdminAuthenticated();
     setIsAuthenticated(isAuth);
+    setCloudSynced(isFirebaseConfigured());
+
     if (isAuth) {
       loadData();
     }
-  }, []);
+
+    // Real-time Cloud Subscriptions
+    const unsubStudents = listenToStudentsCloud((cloudStudents) => {
+      if (cloudStudents && cloudStudents.length > 0) {
+        VajraStudentStore.syncMembersFromCloud(cloudStudents);
+        setStudents(VajraStudentStore.getAllStudents());
+      }
+    });
+
+    const unsubMeet = listenToMeetLinksCloud((cloudLinks) => {
+      if (cloudLinks && Object.keys(cloudLinks).length > 0) {
+        VajraStudentStore.syncMeetLinksFromCloud(cloudLinks);
+        const links = VajraStudentStore.getAllMeetLinks();
+        setAllMeetLinks(links);
+        setMeetUrlInput(links[selectedMeetCourse] || "https://meet.google.com/new");
+      }
+    });
+
+    const unsubVideos = listenToVideosCloud((cloudVideos) => {
+      if (cloudVideos && cloudVideos.length > 0) {
+        VajraStudentStore.syncVideosFromCloud(cloudVideos);
+        setVideosList(VajraStudentStore.getAllVideos());
+      }
+    });
+
+    const handleLocalRegistryChange = () => {
+      setStudents(VajraStudentStore.getAllStudents());
+    };
+    window.addEventListener("vajra_registry_change", handleLocalRegistryChange);
+
+    return () => {
+      unsubStudents();
+      unsubMeet();
+      unsubVideos();
+      window.removeEventListener("vajra_registry_change", handleLocalRegistryChange);
+    };
+  }, [selectedMeetCourse]);
 
   const loadData = () => {
     setStudents(VajraStudentStore.getAllStudents());

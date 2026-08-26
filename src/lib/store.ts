@@ -1,4 +1,10 @@
-'use client';
+import { 
+  syncStudentToCloud, 
+  deleteStudentFromCloud, 
+  syncMeetLinkToCloud, 
+  syncVideoToCloud, 
+  deleteVideoFromCloud 
+} from "./firebase";
 
 export interface VajraStudent {
   accessCode: string;
@@ -8,8 +14,6 @@ export interface VajraStudent {
   ageGroup: string;
   batchTime: string;
   joinedDate: string;
-  currentLevel?: string;
-  beltColor?: string;
   attendanceRate: number;
   attendedClasses: number;
   totalClasses: number;
@@ -62,6 +66,25 @@ export class VajraStudentStore {
       const registry = this.getMembersRegistry();
       registry[student.accessCode.toUpperCase()] = student;
       localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      
+      // Auto Sync to Cloud Firestore
+      syncStudentToCloud(student);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  static syncMembersFromCloud(cloudStudents: VajraStudent[]) {
+    if (typeof window === 'undefined' || !cloudStudents) return;
+    try {
+      const registry = this.getMembersRegistry();
+      cloudStudents.forEach(st => {
+        if (st && st.accessCode) {
+          registry[st.accessCode.toUpperCase()] = st;
+        }
+      });
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      window.dispatchEvent(new Event('vajra_registry_change'));
     } catch (e) {
       console.error(e);
     }
@@ -165,6 +188,9 @@ export class VajraStudentStore {
         localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(updated));
         window.dispatchEvent(new Event('vajra_student_change'));
       }
+
+      // Auto Sync to Cloud
+      syncStudentToCloud(updated);
     } catch (e) {
       console.error(e);
     }
@@ -185,6 +211,9 @@ export class VajraStudentStore {
         localStorage.removeItem(ACTIVE_STUDENT_KEY);
         window.dispatchEvent(new Event('vajra_student_change'));
       }
+
+      // Auto Delete from Cloud
+      deleteStudentFromCloud(upperCode);
     } catch (e) {
       console.error(e);
     }
@@ -282,10 +311,36 @@ export class VajraStudentStore {
       links[upper] = link;
       localStorage.setItem(COURSE_MEET_LINKS_KEY, JSON.stringify(links));
 
+      const now = Date.now();
       const timestamps = this.getAllMeetTimestamps();
-      timestamps[upper] = Date.now();
+      timestamps[upper] = now;
       localStorage.setItem(COURSE_MEET_TIMESTAMPS_KEY, JSON.stringify(timestamps));
 
+      // Auto Sync to Cloud
+      syncMeetLinkToCloud(upper, link, now);
+
+      window.dispatchEvent(new Event('vajra_meet_link_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  static syncMeetLinksFromCloud(cloudLinks: Record<string, { url: string; updatedAt: number }>) {
+    if (typeof window === 'undefined' || !cloudLinks) return;
+    try {
+      const links = this.getAllMeetLinks();
+      const timestamps = this.getAllMeetTimestamps();
+      
+      Object.keys(cloudLinks).forEach(course => {
+        const item = cloudLinks[course];
+        if (item && item.url) {
+          links[course] = item.url;
+          timestamps[course] = item.updatedAt || Date.now();
+        }
+      });
+
+      localStorage.setItem(COURSE_MEET_LINKS_KEY, JSON.stringify(links));
+      localStorage.setItem(COURSE_MEET_TIMESTAMPS_KEY, JSON.stringify(timestamps));
       window.dispatchEvent(new Event('vajra_meet_link_updated'));
     } catch (e) {
       console.error(e);
@@ -331,6 +386,8 @@ export class VajraStudentStore {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
+        // Auto Sync to Cloud
+        syncVideoToCloud(newVideo);
       } catch (e) {
         console.error(e);
       }
@@ -347,11 +404,30 @@ export class VajraStudentStore {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
+        // Auto Delete from Cloud
+        deleteVideoFromCloud(id);
       } catch (e) {
         console.error(e);
       }
     }
     return true;
   }
-}
 
+  static syncVideosFromCloud(cloudVideos: TrainingVideo[]) {
+    if (typeof window === 'undefined' || !cloudVideos) return;
+    try {
+      const stored: Record<string, TrainingVideo[]> = {};
+      cloudVideos.forEach(v => {
+        if (v && v.course) {
+          const upper = v.course.toUpperCase().trim();
+          if (!stored[upper]) stored[upper] = [];
+          stored[upper].push(v);
+        }
+      });
+      localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
+      window.dispatchEvent(new Event('vajra_videos_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore, TrainingVideo } from "@/lib/store";
+import { listenToMeetLinksCloud, listenToVideosCloud } from "@/lib/firebase";
 import { 
   User, Shield, Flame, Dumbbell, Sparkles, CheckCircle2, 
   Copy, Check, LogOut, MessageSquare, Phone, ChevronRight, 
@@ -53,10 +54,30 @@ export default function StudentPortalPage() {
 
     updateMeet();
     window.addEventListener("vajra_meet_link_updated", updateMeet);
+    window.addEventListener("vajra_videos_updated", () => {
+      setVideos(VajraStudentStore.getCourseVideos(student.course));
+    });
+
+    const unsubMeet = listenToMeetLinksCloud((cloudLinks) => {
+      if (cloudLinks && Object.keys(cloudLinks).length > 0) {
+        VajraStudentStore.syncMeetLinksFromCloud(cloudLinks);
+        updateMeet();
+      }
+    });
+
+    const unsubVideos = listenToVideosCloud((cloudVideos) => {
+      if (cloudVideos && cloudVideos.length > 0) {
+        VajraStudentStore.syncVideosFromCloud(cloudVideos);
+        setVideos(VajraStudentStore.getCourseVideos(student.course));
+      }
+    });
+
     const interval = setInterval(updateMeet, 10000);
 
     return () => {
       window.removeEventListener("vajra_meet_link_updated", updateMeet);
+      unsubMeet();
+      unsubVideos();
       clearInterval(interval);
     };
   }, [student]);
