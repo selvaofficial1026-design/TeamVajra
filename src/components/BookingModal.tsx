@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { VajraStudentStore } from "@/lib/store";
+import { VajraStudent, VajraStudentStore } from "@/lib/store";
 import VajraAlertModal from "./VajraAlertModal";
 import { 
   X, CheckCircle2, ArrowRight, MessageSquare, User, 
-  KeyRound, Copy, Check, LogIn, AlertCircle, Clock, Shield
+  KeyRound, Copy, Check, LogIn, AlertCircle, Clock, Shield, Search
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -18,7 +18,7 @@ interface BookingModalProps {
 
 export default function BookingModal({ isOpen, onClose, initialArt }: BookingModalProps) {
   const router = useRouter();
-  const [authTab, setAuthTab] = useState<"register" | "login">("register");
+  const [authTab, setAuthTab] = useState<"register" | "track" | "login">("register");
 
   // Registration Form State
   const [regName, setRegName] = useState("");
@@ -27,9 +27,14 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   const [regAgeGroup, setRegAgeGroup] = useState("Adult (18–45 yrs)");
   const [regBatchTime, setRegBatchTime] = useState("Morning (05:30 AM – 07:30 AM)");
 
-  // Generated Access Code State
+  // Generated Access / Tracking Code State
   const [generatedCode, setGeneratedCode] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
+
+  // Track Status State
+  const [trackInput, setTrackInput] = useState("");
+  const [trackedStudent, setTrackedStudent] = useState<VajraStudent | null>(null);
+  const [trackSearched, setTrackSearched] = useState(false);
 
   // Login Form State
   const [loginCode, setLoginCode] = useState("");
@@ -51,11 +56,6 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   }, [initialArt]);
 
   if (!isOpen) return null;
-
-  const generateRandomCode = () => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `VAJRA-${randomNum}`;
-  };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +102,25 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     setGeneratedCode(requestCode);
     setSuccessType("register");
     setIsSuccess(true);
+  };
+
+  const handleTrackStatus = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackInput.trim()) {
+      setSystemAlert({
+        title: "Code or Phone Required",
+        message: "Please enter your Tracking Code (e.g. REQ-1234) or registered WhatsApp phone number.",
+        type: "warning"
+      });
+      return;
+    }
+    const clean = trackInput.trim();
+    let found = VajraStudentStore.getMemberFromRegistry(clean);
+    if (!found) {
+      found = VajraStudentStore.getStudentByPhone(clean);
+    }
+    setTrackSearched(true);
+    setTrackedStudent(found);
   };
 
   const handleCopyCode = () => {
@@ -151,21 +170,31 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
 
   const handleClose = () => {
     setIsSuccess(false);
+    setTrackSearched(false);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto md:overflow-hidden">
-      <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-[#0F1424] border border-slate-700/80 shadow-2xl p-4 sm:p-6 md:p-7.5 ring-1 ring-white/10 max-h-[92vh] md:max-h-none overflow-y-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+      
+      {/* Click Outside Backdrop Handler */}
+      <div className="fixed inset-0 -z-10" onClick={handleClose} />
+
+      {/* Modal Container */}
+      <div 
+        className="relative w-full max-w-lg bg-[#0F1424] border border-slate-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl overflow-hidden ring-1 ring-white/10 my-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* Top Accent Ribbon */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
-        
-        {/* Close Button - 44px min touch target */}
+        {/* Top Gold & Blue Brand Glow Accent Line */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-sky-400 to-amber-500" />
+
+        {/* Close Button */}
         <button
+          type="button"
           onClick={handleClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.08] transition"
-          aria-label="Close Booking Modal"
+          className="absolute top-3.5 right-3.5 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 active:scale-95 transition"
+          aria-label="Close Modal"
         >
           <X className="w-5 h-5" />
         </button>
@@ -173,56 +202,78 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
         {!isSuccess ? (
           <div>
             
-            {/* Header with Logo Emblem */}
-            <div className="flex items-center gap-3 mb-5 pr-10">
-              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden border border-slate-700 bg-black/60 shrink-0 p-1">
+            {/* Header with Team Vajra Logo */}
+            <div className="flex items-center gap-3 mb-5 pr-8">
+              <div className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden border border-white/20 bg-[#06080F]/90 shrink-0 p-1">
                 <Image
                   src="/vajra-logo.jpg"
-                  alt="Team Vajra Official Emblem"
+                  alt="Team Vajra Emblem"
                   fill
-                  className="object-contain p-0.5"
+                  className="object-contain"
                 />
               </div>
               <div className="min-w-0">
-                <span className="eyebrow-label text-[10px] block text-blue-400 truncate">
-                  Student Enrollment & Access
+                <span className="text-[10px] font-mono font-bold tracking-wider text-blue-400 uppercase block">
+                  TEAM VAJRA ADMISSIONS
                 </span>
                 <h3 className="font-display text-base sm:text-lg md:text-xl font-bold text-white tracking-tight truncate">
-                  Team Vajra Academy
+                  Academy Registration & Login
                 </h3>
               </div>
             </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-[#13192B] border border-slate-700/60 mb-5">
+            {/* 3 Mode Switcher Tabs */}
+            <div className="grid grid-cols-3 p-1 rounded-2xl bg-[#13192B] border border-slate-700/60 mb-5 gap-1 text-[11px] sm:text-xs">
               <button
                 type="button"
-                onClick={() => setAuthTab("register")}
-                className={`min-h-[44px] flex items-center justify-center py-2.5 px-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+                onClick={() => {
+                  setAuthTab("register");
+                  setTrackSearched(false);
+                }}
+                className={`min-h-[42px] flex items-center justify-center py-2 px-1 font-bold uppercase rounded-xl transition-all ${
                   authTab === "register"
                     ? "bg-blue-600 text-white shadow-md"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                Register & Enroll
+                <span className="truncate">Register</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => setAuthTab("login")}
-                className={`min-h-[44px] flex items-center justify-center py-2.5 px-3 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
+                onClick={() => {
+                  setAuthTab("track");
+                  setTrackSearched(false);
+                }}
+                className={`min-h-[42px] flex items-center justify-center py-2 px-1 font-bold uppercase rounded-xl transition-all ${
+                  authTab === "track"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                <span className="truncate">Track Status</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab("login");
+                  setTrackSearched(false);
+                }}
+                className={`min-h-[42px] flex items-center justify-center py-2 px-1 font-bold uppercase rounded-xl transition-all ${
                   authTab === "login"
                     ? "bg-blue-600 text-white shadow-md"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
-                Login With Code
+                <span className="truncate">Login</span>
               </button>
             </div>
 
             {/* =========================================================================
                 TAB 1: ENROLLMENT & REGISTRATION
                ========================================================================= */}
-            {authTab === "register" ? (
+            {authTab === "register" && (
               <div className="space-y-3.5">
                 {/* ALREADY EXISTS ERROR BANNER */}
                 {phoneExistsError && (
@@ -242,7 +293,7 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                           setAuthTab("login");
                           setPhoneExistsError(null);
                         }}
-                        className="min-h-[44px] flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
+                        className="min-h-[40px] flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md"
                       >
                         <LogIn className="w-3.5 h-3.5" />
                         <span>Login with {phoneExistsError.code}</span>
@@ -250,7 +301,7 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                       <button
                         type="button"
                         onClick={() => setPhoneExistsError(null)}
-                        className="min-h-[44px] py-2.5 px-3.5 rounded-xl bg-[#13192B] border border-slate-700 text-slate-300 text-xs font-semibold hover:text-white"
+                        className="min-h-[40px] py-2 px-3.5 rounded-xl bg-[#13192B] border border-slate-700 text-slate-300 text-xs font-semibold hover:text-white"
                       >
                         Change Number
                       </button>
@@ -258,30 +309,29 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                   </div>
                 )}
 
-                <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                  
+                <form onSubmit={handleRegisterSubmit} className="space-y-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Student Full Name *
+                      Full Name *
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-blue-400 absolute left-3 top-3.5 shrink-0" />
+                      <User className="w-4 h-4 text-blue-400 absolute left-3.5 top-3 shrink-0" />
                       <input
                         type="text"
                         required
                         value={regName}
                         onChange={(e) => setRegName(e.target.value)}
-                        className="w-full min-h-[44px] pl-9 pr-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none transition"
+                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-xs focus:border-blue-500 focus:outline-none transition"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      WhatsApp Mobile Number *
+                      WhatsApp Phone Number *
                     </label>
                     <div className="relative flex items-center">
-                      <span className="absolute left-3 text-xs font-mono font-bold text-blue-400">
+                      <span className="absolute left-3.5 text-xs font-mono font-bold text-blue-400">
                         +91
                       </span>
                       <input
@@ -290,15 +340,15 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                         maxLength={10}
                         value={regPhone}
                         onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, ""))}
-                        className="w-full min-h-[44px] pl-11 pr-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none font-mono transition"
+                        className="w-full min-h-[44px] pl-12 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-xs font-mono focus:border-blue-500 focus:outline-none transition"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                        Course Selection
+                        Course *
                       </label>
                       <select
                         value={regCourse}
@@ -309,13 +359,13 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                         <option value="YOGA">YOGA</option>
                         <option value="MARTIAL ARTS">MARTIAL ARTS</option>
                         <option value="SILAMBAM">SILAMBAM (சிலம்பம்)</option>
-                        <option value="ALL-ACCESS TRACK">ALL 4 COURSES</option>
+                        <option value="ALL-ACCESS TRACK">ALL-ACCESS (4 Arts)</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                        Age Bracket
+                        Age Cohort *
                       </label>
                       <select
                         value={regAgeGroup}
@@ -325,14 +375,14 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                         <option value="Junior (5–12 yrs)">Junior (5–12 yrs)</option>
                         <option value="Teen (13–17 yrs)">Teen (13–17 yrs)</option>
                         <option value="Adult (18–45 yrs)">Adult (18–45 yrs)</option>
-                        <option value="Senior (45+ yrs)">Senior (45+ yrs)</option>
+                        <option value="Master/Senior (45+ yrs)">Senior (45+ yrs)</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Preferred Batch Time
+                      Preferred Batch *
                     </label>
                     <select
                       value={regBatchTime}
@@ -359,40 +409,137 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
 
                 </form>
               </div>
-            ) : (
-                
-                /* =========================================================================
-                    TAB 2: STUDENT LOGIN WITH ACCESS CODE
-                   ========================================================================= */
-                <form onSubmit={handleVerifyLogin} className="space-y-4">
+            )}
+
+            {/* =========================================================================
+                TAB 2: TRACK APPROVAL STATUS
+               ========================================================================= */}
+            {authTab === "track" && (
+              <div className="space-y-4 animate-fade-in">
+                <form onSubmit={handleTrackStatus} className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Paste / Enter Student Access Code
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                      Tracking Reference Code or Phone *
                     </label>
                     <div className="relative">
-                      <KeyRound className="w-4 h-4 text-blue-400 absolute left-3 top-3.5 shrink-0" />
+                      <Search className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5 shrink-0" />
                       <input
                         type="text"
                         required
-                        value={loginCode}
-                        onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
-                        className="w-full min-h-[44px] pl-9 pr-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm font-mono font-bold tracking-wider focus:border-blue-500 focus:outline-none transition uppercase"
+                        placeholder="e.g. REQ-4819 or 9876543210"
+                        value={trackInput}
+                        onChange={(e) => setTrackInput(e.target.value)}
+                        className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700 text-white text-base sm:text-xs font-mono uppercase focus:border-blue-500 focus:outline-none transition placeholder:normal-case placeholder:text-slate-500"
                       />
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1.5 block">
-                      Paste the Student Code from your registration (e.g. VAJRA-7842).
-                    </span>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full min-h-[44px] py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                    className="w-full min-h-[44px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
                   >
-                    <LogIn className="w-4 h-4" />
-                    <span>Login to Student Portal</span>
+                    <Search className="w-4 h-4" />
+                    <span>Check Approval Status</span>
                   </button>
                 </form>
-              )}
+
+                {/* Tracking Result Card */}
+                {trackSearched && (
+                  <div className="pt-1">
+                    {!trackedStudent ? (
+                      <div className="p-4 rounded-2xl bg-red-950/30 border border-red-500/30 text-center space-y-1 text-xs">
+                        <AlertCircle className="w-5 h-5 text-red-400 mx-auto" />
+                        <strong className="text-white block">No Record Found</strong>
+                        <p className="text-slate-400">
+                          Please verify your Tracking Reference Code or registered phone number.
+                        </p>
+                      </div>
+                    ) : trackedStudent.approvalStatus === "PENDING_APPROVAL" ? (
+                      <div className="p-4 rounded-2xl bg-[#141A2E] border border-amber-500/40 text-left space-y-2.5 shadow-xl text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 animate-spin" />
+                            <span>Waiting for Admin Approval</span>
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-400 font-bold">
+                            {trackedStudent.accessCode}
+                          </span>
+                        </div>
+                        <p className="text-slate-200">
+                          Hello <strong>{trackedStudent.name}</strong>, your application for <strong>{trackedStudent.course}</strong> is currently under review.
+                        </p>
+                        <p className="text-[11px] text-amber-300">
+                          Once approved by the admin, your official Access Code will unlock here!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-[#0F1D33] border border-emerald-500/50 text-left space-y-3 shadow-2xl text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>ADMISSION APPROVED!</span>
+                          </span>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-[#070B16] border border-blue-500/40 text-center space-y-1">
+                          <span className="text-[10px] uppercase font-mono text-slate-400 block">
+                            Your Permanent Student Access Code
+                          </span>
+                          <div className="text-xl font-black text-blue-400 font-mono tracking-wider">
+                            {trackedStudent.accessCode}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            VajraStudentStore.setStudent(trackedStudent);
+                            handleEnterPortal();
+                          }}
+                          className="w-full min-h-[44px] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                        >
+                          <span>Enter Student Portal</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {/* =========================================================================
+                TAB 3: STUDENT LOGIN WITH ACCESS CODE
+               ========================================================================= */}
+            {authTab === "login" && (
+              <form onSubmit={handleVerifyLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Student Access Code *
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5 shrink-0" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. VAJRA-1026"
+                      value={loginCode}
+                      onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
+                      className="w-full min-h-[44px] pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-xs font-mono font-bold tracking-wider focus:border-blue-500 focus:outline-none transition uppercase placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full min-h-[44px] py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Login to Student Portal</span>
+                </button>
+              </form>
+            )}
 
           </div>
         ) : (
@@ -472,13 +619,14 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
               <button
                 type="button"
                 onClick={() => {
-                  onClose();
-                  router.push("/login");
+                  setIsSuccess(false);
+                  setTrackInput(generatedCode);
+                  setAuthTab("track");
                 }}
                 className="min-h-[44px] flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/30 text-center"
               >
-                <span>Track Status in Login Portal</span>
-                <ArrowRight className="w-4 h-4" />
+                <Search className="w-4 h-4" />
+                <span>Track Approval Status</span>
               </button>
 
               <button

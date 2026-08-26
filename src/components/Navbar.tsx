@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { VajraStudent, VajraStudentStore } from "@/lib/store";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
 import VajraAlertModal from "@/components/VajraAlertModal";
-import { Menu, X, ArrowUpRight, User, KeyRound, LogIn, ChevronRight } from "lucide-react";
+import { Menu, X, ArrowUpRight, User, KeyRound, LogIn, ChevronRight, Clock, Search } from "lucide-react";
 
 interface NavbarProps {
   onOpenBooking: (selectedCourse?: string) => void;
@@ -18,32 +18,37 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeStudent, setActiveStudent] = useState<VajraStudent | null>(null);
+
+  // Quick Login Modal State
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
   const [quickName, setQuickName] = useState("");
   const [quickCode, setQuickCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifiedPayload, setVerifiedPayload] = useState<{ name: string; code: string; course: string } | null>(null);
-  const pathname = usePathname();
-
   const [isAdminRedirect, setIsAdminRedirect] = useState(false);
+
+  // Custom Brand System Notice State
   const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
+
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    window.addEventListener("scroll", handleScroll);
 
-    // Sync student session
-    const syncStudent = () => {
-      setActiveStudent(VajraStudentStore.getStudent());
+    const updateActiveStudent = () => {
+      const student = VajraStudentStore.getStudent();
+      setActiveStudent(student);
     };
-    syncStudent();
 
-    window.addEventListener("vajra_student_change", syncStudent);
+    updateActiveStudent();
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("vajra_student_change", updateActiveStudent);
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("vajra_student_change", syncStudent);
+      window.removeEventListener("vajra_student_change", updateActiveStudent);
     };
   }, []);
 
@@ -52,7 +57,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
     if (!quickCode.trim()) {
       setSystemAlert({
         title: "Access Code Required",
-        message: "Please enter your Student Access Code or Password.",
+        message: "Please enter your Student Access Code.",
         type: "warning"
       });
       return;
@@ -81,30 +86,31 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
     const code = rawCode.toUpperCase();
     const registered = VajraStudentStore.getMemberFromRegistry(code);
 
-    let currentStudent: VajraStudent;
     if (registered) {
+      if (registered.approvalStatus === "PENDING_APPROVAL") {
+        setSystemAlert({
+          title: "Waiting for Admin Approval",
+          message: `Your admission request (${code}) is currently under review by Academy Admin. Please check back shortly once approved.`,
+          type: "warning"
+        });
+        return;
+      }
       VajraStudentStore.setStudent(registered);
-      currentStudent = registered;
+      setQuickLoginOpen(false);
+      setIsAdminRedirect(false);
+      setVerifiedPayload({
+        name: registered.name,
+        code: registered.accessCode,
+        course: registered.course
+      });
+      setIsVerifying(true);
     } else {
-      currentStudent = VajraStudentStore.createStudentProfile(
-        code,
-        quickName.trim() || "Member",
-        "+91 86681 02797",
-        "SILAMBAM",
-        "Adult (18–45 yrs)",
-        "Morning (05:30 AM – 07:30 AM)"
-      );
-      VajraStudentStore.setStudent(currentStudent);
+      setSystemAlert({
+        title: "Access Code Not Found",
+        message: `No student profile found for code "${rawCode}". If you recently registered, please track your approval status on the login page.`,
+        type: "error"
+      });
     }
-
-    setQuickLoginOpen(false);
-    setIsAdminRedirect(false);
-    setVerifiedPayload({
-      name: currentStudent.name,
-      code: currentStudent.accessCode,
-      course: currentStudent.course
-    });
-    setIsVerifying(true);
   };
 
   const navItems = [
@@ -180,18 +186,28 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                   <span className="font-mono text-[11px] text-blue-400 shrink-0">({activeStudent.accessCode})</span>
                 </Link>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setQuickLoginOpen(true)}
-                  className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all min-h-[38px] ${
-                    pathname === "/login" || pathname === "/register"
-                      ? "text-blue-400 bg-blue-600/15 border border-blue-500/30 font-bold"
-                      : "text-slate-300 hover:text-white hover:bg-white/[0.05] border border-transparent"
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  <span>Student Login</span>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-all min-h-[38px]"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Track Status</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setQuickLoginOpen(true)}
+                    className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all min-h-[38px] ${
+                      pathname === "/login" || pathname === "/register"
+                        ? "text-blue-400 bg-blue-600/15 border border-blue-500/30 font-bold"
+                        : "text-slate-300 hover:text-white hover:bg-white/[0.05] border border-transparent"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    <span>Student Login</span>
+                  </button>
+                </div>
               )}
 
               {/* Enroll CTA Button */}
@@ -256,6 +272,18 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 </Link>
               );
             })}
+
+            <Link
+              href="/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="min-h-[44px] flex items-center justify-between px-4 rounded-xl text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/25"
+            >
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-400" />
+                <span>Track Admission Approval</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-amber-400/60" />
+            </Link>
             
             <button
               onClick={() => {
@@ -266,7 +294,7 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
             >
               <User className="w-4 h-4 text-blue-400 shrink-0" />
               <span className="truncate">
-                {activeStudent ? `Portal (${activeStudent.accessCode})` : "Student Login with Code & Name"}
+                {activeStudent ? `Portal (${activeStudent.accessCode})` : "Student Login with Access Code"}
               </span>
             </button>
 
