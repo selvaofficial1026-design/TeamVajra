@@ -368,70 +368,119 @@ export default function StudentPortalPage() {
             {/* Profile Grid: Left (Membership Card) / Right (Details) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               
-              {/* Left: Clean Student Membership Card (6 Cols) */}
+              {/* Left: Elite VIP Athlete Membership Card (6 Cols) */}
               <div className="lg:col-span-6">
-                <div className="rounded-2xl bg-[#0D1220] border border-slate-800 p-4 sm:p-7 space-y-4 sm:space-y-5">
+                <div className="relative rounded-3xl bg-gradient-to-br from-[#111827] via-[#0B0F19] to-[#04060C] border border-blue-500/30 p-5 sm:p-7 space-y-5 shadow-2xl shadow-blue-950/40 overflow-hidden ring-1 ring-white/10 group">
                   
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between pb-3.5 sm:pb-4 border-b border-slate-800 gap-2">
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                      <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-slate-700 bg-black/60 p-0.5 shrink-0">
-                        <Image src="/vajra-logo.jpg" alt="Team Vajra Emblem" fill className="object-contain" />
+                  {/* Subtle Holographic Grid Pattern & Glow Watermark */}
+                  <div className="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.07] pointer-events-none" />
+                  <div className="absolute -top-16 -right-16 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-blue-500/20 transition-all duration-700" />
+                  <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                  {/* Top VIP Accent Foil Strip */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-sky-400 to-amber-400" />
+
+                  {/* Card Header with Smart Chip & Academy Emblem */}
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 gap-3 relative">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-blue-400/40 bg-black/80 p-1 shadow-lg shrink-0">
+                        <Image src="/vajra-logo.jpg" alt="Team Vajra Emblem" fill className="object-contain p-0.5" priority />
                       </div>
                       <div className="min-w-0">
-                        <strong className="text-white font-semibold text-xs sm:text-sm block truncate">Team Vajra Fitness Arts</strong>
-                        <span className="text-[11px] sm:text-xs text-slate-400 block truncate">Student Membership Card</span>
+                        <span className="text-[10px] font-bold tracking-[0.2em] text-blue-400 uppercase block">
+                          Official Athlete Pass
+                        </span>
+                        <strong className="text-white font-extrabold text-sm sm:text-base block truncate tracking-tight">
+                          TEAM VAJRA ACADEMY
+                        </strong>
                       </div>
                     </div>
 
-                    <span className="px-2 sm:px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] sm:text-xs font-medium shrink-0">
-                      ● Active Pass
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Micro NFC / Smart Chip Aesthetic */}
+                      <div className="hidden sm:flex w-8 h-6 rounded-md bg-gradient-to-tr from-amber-500/30 to-amber-300/60 border border-amber-400/50 items-center justify-center shadow-inner">
+                        <div className="w-5 h-3 border border-amber-300/40 rounded-sm" />
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold flex items-center gap-1.5 shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Active Pass</span>
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Student Details Grid (Optimized word breaking for mobile) */}
-                  <div className="space-y-2.5 sm:space-y-3.5 text-xs">
+                  {/* Student Details Grid (VIP Badge Layout) */}
+                  <div className="space-y-3 text-xs relative">
                     
+                    {/* Student Name */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
-                      <span className="text-slate-400 shrink-0">Student Name:</span>
-                      <strong className="text-white font-medium text-xs sm:text-sm text-right break-words">{student.name}</strong>
+                      <span className="text-slate-400 font-medium shrink-0">Student Name</span>
+                      <strong className="text-white font-bold text-sm sm:text-base text-right break-words tracking-tight">
+                        {student.name}
+                      </strong>
                     </div>
 
-                    <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-2">
-                      <span className="text-slate-400 shrink-0">Access Code:</span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <strong className="font-mono text-xs sm:text-sm text-blue-400 font-bold">{student.accessCode}</strong>
-                        <button
-                          type="button"
-                          onClick={handleCopyCode}
-                          className="min-w-[32px] min-h-[32px] p-1.5 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 flex items-center justify-center transition"
-                          title="Copy Code"
-                        >
-                          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
+                    {/* Access Code Highlight Box */}
+                    <div className="flex items-center justify-between py-2.5 px-3.5 rounded-xl bg-[#070B14]/80 border border-blue-500/20 gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Student Access Code</span>
+                        <strong className="font-mono text-sm sm:text-base text-sky-400 font-extrabold tracking-wider block">
+                          {student.accessCode}
+                        </strong>
                       </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCode}
+                        className="min-w-[36px] min-h-[36px] px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-300 hover:text-white flex items-center justify-center gap-1.5 transition active:scale-95 text-xs font-semibold shrink-0"
+                        title="Copy Code"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400 text-[11px]">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span className="text-[11px]">Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
 
+                    {/* Course */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
-                      <span className="text-slate-400 shrink-0">Course:</span>
-                      <span className="text-white font-medium text-right break-words">{student.course}</span>
+                      <span className="text-slate-400 font-medium shrink-0">Course Track</span>
+                      <span className="px-2.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-300 font-semibold text-right break-words text-xs">
+                        {student.course}
+                      </span>
                     </div>
 
+                    {/* Batch Timing */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
-                      <span className="text-slate-400 shrink-0">Batch Timing:</span>
-                      <span className="text-slate-300 text-right text-[11px] sm:text-xs break-words">{student.batchTime}</span>
+                      <span className="text-slate-400 font-medium shrink-0">Batch Schedule</span>
+                      <span className="text-slate-200 text-right text-[11px] sm:text-xs font-medium break-words">
+                        {student.batchTime}
+                      </span>
                     </div>
 
+                    {/* Registered Phone */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
-                      <span className="text-slate-400 shrink-0">Registered Phone:</span>
-                      <span className="text-slate-300 font-mono text-right">{student.phone}</span>
+                      <span className="text-slate-400 font-medium shrink-0">Registered WhatsApp</span>
+                      <span className="text-slate-300 font-mono font-medium text-right">{student.phone}</span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 gap-3">
-                      <span className="text-slate-400 shrink-0">Admission Date:</span>
-                      <span className="text-slate-300 text-right">{student.joinedDate}</span>
+                    {/* Admission Date */}
+                    <div className="flex items-center justify-between pt-1 gap-3 text-slate-400">
+                      <span className="font-medium shrink-0">Enrolled Since</span>
+                      <span className="text-slate-300 text-right font-medium">{student.joinedDate}</span>
                     </div>
 
+                  </div>
+
+                  {/* Card Bottom Security Strip & Microprint */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 tracking-wider uppercase font-mono">
+                    <span>AUTHENTICATED PASS</span>
+                    <span className="text-blue-400 font-semibold">VAJRA DIGITAL ID</span>
                   </div>
 
                 </div>
