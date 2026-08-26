@@ -63,7 +63,7 @@ export default function TimezoneSelector({
       {isOpen && (
         <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none animate-fade-in">
           <div 
-            className="w-full max-w-lg bg-[#0D1220] border border-blue-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col text-left ring-1 ring-blue-500/20"
+            className="w-full max-w-lg bg-[#0D1220] border border-blue-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col text-left ring-1 ring-blue-500/20 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -134,8 +134,8 @@ export default function TimezoneSelector({
               />
             </div>
 
-            {/* Country Timezone List */}
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-72 custom-scrollbar">
+            {/* Country Timezone List (Scrollbar completely hidden) */}
+            <div className="flex-1 overflow-y-auto space-y-1.5 max-h-72 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {filteredTzs.length === 0 ? (
                 <div className="py-8 text-center text-xs text-slate-400">
                   No matching countries or timezones found for &quot;{searchQuery}&quot;.
