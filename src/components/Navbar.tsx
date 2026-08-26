@@ -281,8 +281,8 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
           NAVBAR QUICK STUDENT ACCESS LOGIN MODAL
          ========================================================================= */}
       {quickLoginOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#0F1424] border border-slate-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 shadow-2xl overflow-hidden ring-1 ring-white/10 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto md:overflow-hidden">
+          <div className="relative w-full max-w-md bg-[#0F1424] border border-slate-700/80 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-7 shadow-2xl ring-1 ring-white/10 max-h-[92vh] md:max-h-none overflow-y-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             
             {/* Top Close Button - 44px touch target */}
             <button

@@ -145,8 +145,8 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-[#0F1424] border border-slate-700/80 shadow-2xl p-4 sm:p-6 md:p-8 overflow-hidden ring-1 ring-white/10 max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto md:overflow-hidden">
+      <div className="relative w-full max-w-md rounded-2xl sm:rounded-3xl bg-[#0F1424] border border-slate-700/80 shadow-2xl p-4 sm:p-6 md:p-7.5 ring-1 ring-white/10 max-h-[92vh] md:max-h-none overflow-y-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         
         {/* Top Accent Ribbon */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
