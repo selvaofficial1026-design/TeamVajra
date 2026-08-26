@@ -6,12 +6,10 @@ import {
   setDoc, 
   deleteDoc, 
   onSnapshot, 
-  getDocs, 
   Firestore,
-  query,
-  orderBy
+  updateDoc
 } from "firebase/firestore";
-import { VajraStudent, TrainingVideo } from "./store";
+import { VajraStudent, TrainingVideo, VajraMessage } from "./store";
 
 // Firebase Configuration via Environment Variables
 const firebaseConfig = {
@@ -165,6 +163,62 @@ export const listenToVideosCloud = (callback: (videos: TrainingVideo[]) => void)
       callback(list);
     }, (error) => {
       console.warn("Error listening to videos cloud:", error);
+    });
+  } catch (e) {
+    console.warn(e);
+    return () => {};
+  }
+};
+
+// 4. STUDENT & ADMIN IN-APP MESSAGES REALTIME SYNC
+export const syncMessageToCloud = async (message: VajraMessage) => {
+  if (!db) return;
+  try {
+    const msgRef = doc(db, "vajra_messages", message.id);
+    await setDoc(msgRef, message, { merge: true });
+  } catch (err) {
+    console.error("Failed to sync message to cloud:", err);
+  }
+};
+
+export const replyMessageInCloud = async (messageId: string, replyText: string) => {
+  if (!db) return;
+  try {
+    const msgRef = doc(db, "vajra_messages", messageId);
+    await updateDoc(msgRef, {
+      reply: replyText,
+      repliedAt: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      status: 'REPLIED'
+    });
+  } catch (err) {
+    console.error("Failed to reply message in cloud:", err);
+  }
+};
+
+export const deleteMessageFromCloud = async (messageId: string) => {
+  if (!db) return;
+  try {
+    const msgRef = doc(db, "vajra_messages", messageId);
+    await deleteDoc(msgRef);
+  } catch (err) {
+    console.error("Failed to delete message from cloud:", err);
+  }
+};
+
+export const listenToMessagesCloud = (callback: (messages: VajraMessage[]) => void) => {
+  if (!db) return () => {};
+  try {
+    const msgsCol = collection(db, "vajra_messages");
+    return onSnapshot(msgsCol, (snapshot) => {
+      const list: VajraMessage[] = [];
+      snapshot.forEach((doc) => {
+        list.push(doc.data() as VajraMessage);
+      });
+      // Sort newest first
+      list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      callback(list);
+    }, (error) => {
+      console.warn("Error listening to messages cloud:", error);
     });
   } catch (e) {
     console.warn(e);

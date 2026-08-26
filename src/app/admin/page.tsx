@@ -4,19 +4,20 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { VajraStudent, VajraStudentStore, TrainingVideo } from "@/lib/store";
+import { VajraStudent, VajraStudentStore, TrainingVideo, VajraMessage } from "@/lib/store";
 import VajraAlertModal from "@/components/VajraAlertModal";
 import { 
   listenToStudentsCloud, 
   listenToMeetLinksCloud, 
   listenToVideosCloud, 
+  listenToMessagesCloud,
   isFirebaseConfigured 
 } from "@/lib/firebase";
 import { 
   User, KeyRound, LogOut, 
   Search, Plus, Trash2, Edit2, CheckCircle2, AlertCircle, 
   MessageSquare, Radio, Users, Video, ExternalLink, 
-  X, Save, Sparkles, Loader2, Clock, Phone, Cloud
+  X, Save, Sparkles, Loader2, Clock, Phone, Cloud, Send
 } from "lucide-react";
 
 export default function AdminPortalPage() {
@@ -33,12 +34,16 @@ export default function AdminPortalPage() {
   const [cloudSynced, setCloudSynced] = useState(false);
 
   // Navigation Sub-Tabs in Admin
-  const [adminTab, setAdminTab] = useState<"students" | "meet" | "videos">("students");
+  const [adminTab, setAdminTab] = useState<"students" | "meet" | "videos" | "messages">("students");
 
   // Dashboard State
   const [students, setStudents] = useState<VajraStudent[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("ALL");
+
+  // Messages State
+  const [messagesList, setMessagesList] = useState<VajraMessage[]>([]);
+  const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
 
   // Course-Specific Meet Links State
   const [allMeetLinks, setAllMeetLinks] = useState<Record<string, string>>({});
@@ -109,16 +114,30 @@ export default function AdminPortalPage() {
       }
     });
 
+    const unsubMsgs = listenToMessagesCloud((cloudMsgs) => {
+      if (cloudMsgs && cloudMsgs.length > 0) {
+        VajraStudentStore.syncMessagesFromCloud(cloudMsgs);
+        setMessagesList(VajraStudentStore.getAllMessages());
+      }
+    });
+
     const handleLocalRegistryChange = () => {
       setStudents(VajraStudentStore.getAllStudents());
     };
+    const handleLocalMsgsChange = () => {
+      setMessagesList(VajraStudentStore.getAllMessages());
+    };
+
     window.addEventListener("vajra_registry_change", handleLocalRegistryChange);
+    window.addEventListener("vajra_messages_updated", handleLocalMsgsChange);
 
     return () => {
       unsubStudents();
       unsubMeet();
       unsubVideos();
+      unsubMsgs();
       window.removeEventListener("vajra_registry_change", handleLocalRegistryChange);
+      window.removeEventListener("vajra_messages_updated", handleLocalMsgsChange);
     };
   }, [selectedMeetCourse]);
 
@@ -128,6 +147,32 @@ export default function AdminPortalPage() {
     setAllMeetLinks(links);
     setMeetUrlInput(links[selectedMeetCourse] || "https://meet.google.com/new");
     setVideosList(VajraStudentStore.getAllVideos());
+    setMessagesList(VajraStudentStore.getAllMessages());
+  };
+
+  const handleSendCoachReply = (msgId: string) => {
+    const text = replyInputs[msgId];
+    if (!text || !text.trim()) {
+      setSystemAlert({
+        title: "Reply Required",
+        message: "Please type your reply before sending.",
+        type: "warning"
+      });
+      return;
+    }
+
+    VajraStudentStore.replyToMessage(msgId, text.trim());
+    setMessagesList(VajraStudentStore.getAllMessages());
+    setReplyInputs({ ...replyInputs, [msgId]: "" });
+    showToast("Coach reply sent to student portal!");
+  };
+
+  const handleDeleteMessage = (msgId: string) => {
+    if (confirm("Remove this message?")) {
+      VajraStudentStore.deleteMessage(msgId);
+      setMessagesList(VajraStudentStore.getAllMessages());
+      showToast("Message removed");
+    }
   };
 
   const showToast = (msg: string) => {
@@ -512,7 +557,23 @@ export default function AdminPortalPage() {
                 }`}
               >
                 <Video className="w-3.5 h-3.5" />
-                <span>Practice Videos</span>
+                <span>Videos ({videosList.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAdminTab("messages")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition relative ${
+                  adminTab === "messages"
+                    ? "bg-blue-600 text-white font-bold shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Messages ({messagesList.length})</span>
+                {messagesList.filter(m => m.status === "UNREAD").length > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                )}
               </button>
             </nav>
 
@@ -543,21 +604,21 @@ export default function AdminPortalPage() {
 
         {/* Mobile Navigation Segmented Tabs */}
         <div className="md:hidden border-t border-slate-800/80 bg-[#0A0E1A] px-2 py-1.5">
-          <div className="grid grid-cols-3 gap-1 bg-[#090C16] border border-slate-800 rounded-xl p-1">
+          <div className="grid grid-cols-4 gap-1 bg-[#090C16] border border-slate-800 rounded-xl p-1 text-[11px]">
             <button
               onClick={() => setAdminTab("students")}
-              className={`py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+              className={`py-2 px-0.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
                 adminTab === "students" 
                   ? "bg-blue-600 text-white shadow-sm" 
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
               <Users className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Students ({students.length})</span>
+              <span className="truncate">Students</span>
             </button>
             <button
               onClick={() => setAdminTab("meet")}
-              className={`py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+              className={`py-2 px-0.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
                 adminTab === "meet" 
                   ? "bg-blue-600 text-white shadow-sm" 
                   : "text-slate-400 hover:text-slate-200"
@@ -568,14 +629,28 @@ export default function AdminPortalPage() {
             </button>
             <button
               onClick={() => setAdminTab("videos")}
-              className={`py-2 px-1 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
+              className={`py-2 px-0.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition ${
                 adminTab === "videos" 
                   ? "bg-blue-600 text-white shadow-sm" 
                   : "text-slate-400 hover:text-slate-200"
               }`}
             >
               <Video className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">Videos ({videosList.length})</span>
+              <span className="truncate">Videos</span>
+            </button>
+            <button
+              onClick={() => setAdminTab("messages")}
+              className={`py-2 px-0.5 rounded-lg font-semibold flex items-center justify-center gap-1 transition relative ${
+                adminTab === "messages" 
+                  ? "bg-blue-600 text-white shadow-sm" 
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Msgs</span>
+              {messagesList.filter(m => m.status === "UNREAD").length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse absolute top-1.5 right-1" />
+              )}
             </button>
           </div>
         </div>
@@ -1078,6 +1153,128 @@ export default function AdminPortalPage() {
                 )}
 
               </div>
+
+            </div>
+          )}
+
+          {/* =========================================================================
+              SECTION 4: STUDENT INQUIRIES & MEMBER MESSAGES
+             ========================================================================= */}
+          {adminTab === "messages" && (
+            <div className="space-y-6 animate-fade-in">
+              {/* Header & Stats */}
+              <div className="p-4 sm:p-6 rounded-2xl bg-[#0D1220] border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-sky-400" />
+                    <span>Student Messages & Doubt Hotline</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Read inquiries sent by enrolled students and reply directly to their student portals.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+                    Total Messages: {messagesList.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Messages List Feed */}
+              {messagesList.length === 0 ? (
+                <div className="p-12 rounded-2xl bg-[#0D1220] border border-dashed border-slate-800 text-center space-y-2">
+                  <MessageSquare className="w-10 h-10 text-slate-600 mx-auto" />
+                  <h4 className="font-bold text-white text-base">No Student Messages Yet</h4>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    When students ask doubts from their Student Portal, their questions and details will instantly show here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messagesList.map((msg) => (
+                    <div 
+                      key={msg.id}
+                      className="p-4 sm:p-6 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-4 shadow-xl"
+                    >
+                      {/* Student Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <strong className="text-white font-bold text-sm">{msg.studentName}</strong>
+                          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono font-bold">
+                            {msg.studentCode}
+                          </span>
+                          <span className="text-slate-400 font-medium">({msg.course})</span>
+                          <span className="text-slate-400">• Phone: {msg.studentPhone}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                            msg.status === "REPLIED" 
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}>
+                            {msg.status === "REPLIED" ? "✓ Replied" : "● Needs Reply"}
+                          </span>
+
+                          <button
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-400 transition rounded-lg"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Inquiry Content */}
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                          <span className="uppercase font-bold tracking-wider text-slate-400">Student Inquiry</span>
+                          <span>{msg.createdAt}</span>
+                        </div>
+                        <p className="text-slate-200 bg-[#141A2E] p-3.5 rounded-xl border border-slate-700/60 leading-relaxed text-xs sm:text-sm break-words">
+                          {msg.message}
+                        </p>
+                      </div>
+
+                      {/* Coach Reply Section */}
+                      {msg.reply && (
+                        <div className="pl-3 border-l-2 border-emerald-500 space-y-1 text-xs">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <strong className="text-emerald-400 font-bold">Sent Coach Response</strong>
+                            <span className="text-slate-400">{msg.repliedAt}</span>
+                          </div>
+                          <p className="text-emerald-100 bg-emerald-950/20 p-3 rounded-xl border border-emerald-500/20 leading-relaxed">
+                            {msg.reply}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Reply Input Form */}
+                      <div className="pt-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="text"
+                            placeholder={msg.reply ? "Update your reply..." : "Type reply to student..."}
+                            value={replyInputs[msg.id] || ""}
+                            onChange={(e) => setReplyInputs({ ...replyInputs, [msg.id]: e.target.value })}
+                            className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#141A2E] border border-slate-700 text-white text-xs focus:border-blue-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSendCoachReply(msg.id)}
+                            className="min-h-[40px] px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition shadow shrink-0"
+                          >
+                            <span>{msg.reply ? "Update Reply" : "Send Reply"}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
 
             </div>
           )}

@@ -97,7 +97,7 @@ export default function AuthPage() {
     const accessCode = generateRandomCode();
     setGeneratedCode(accessCode);
 
-    // Save actual student profile in local store & registry
+    // Save actual student profile in local store & registry (Auto Sync to Cloud)
     const student = VajraStudentStore.createStudentProfile(
       accessCode,
       regName.trim(),
@@ -108,11 +108,6 @@ export default function AuthPage() {
     );
     VajraStudentStore.setStudent(student);
 
-    const message = `*Team Vajra Student Registration*%0A%0A*Name:* ${encodeURIComponent(regName)}%0A*WhatsApp:* ${encodeURIComponent(regPhone)}%0A*Selected Course:* ${encodeURIComponent(regCourse)}%0A*Age Group:* ${encodeURIComponent(regAgeGroup)}%0A*Preferred Batch:* ${encodeURIComponent(regBatchTime)}%0A*Student Access Code:* ${encodeURIComponent(accessCode)}%0A%0APlease confirm my registration.`;
-    
-    // Open WhatsApp
-    window.open(`https://wa.me/918668102797?text=${message}`, "_blank");
-    
     setSuccessType("register");
     setIsSuccess(true);
   };

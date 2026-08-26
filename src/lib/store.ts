@@ -3,7 +3,10 @@ import {
   deleteStudentFromCloud, 
   syncMeetLinkToCloud, 
   syncVideoToCloud, 
-  deleteVideoFromCloud 
+  deleteVideoFromCloud,
+  syncMessageToCloud,
+  replyMessageInCloud,
+  deleteMessageFromCloud
 } from "./firebase";
 
 export interface VajraStudent {
@@ -43,11 +46,26 @@ export interface MeetInfo {
   isRecent: boolean;
 }
 
+export interface VajraMessage {
+  id: string;
+  studentCode: string;
+  studentName: string;
+  studentPhone: string;
+  course: string;
+  message: string;
+  reply?: string;
+  repliedAt?: string;
+  createdAt: string;
+  timestamp: number;
+  status: 'UNREAD' | 'READ' | 'REPLIED';
+}
+
 const ACTIVE_STUDENT_KEY = 'vajra_active_student';
 const MEMBERS_REGISTRY_KEY = 'vajra_members_registry';
 const COURSE_MEET_LINKS_KEY = 'vajra_course_meet_links';
 const COURSE_MEET_TIMESTAMPS_KEY = 'vajra_course_meet_timestamps';
 const TRAINING_VIDEOS_KEY = 'vajra_training_videos_real';
+const MESSAGES_KEY = 'vajra_inapp_messages';
 
 export class VajraStudentStore {
   static getMembersRegistry(): Record<string, VajraStudent> {
@@ -426,6 +444,114 @@ export class VajraStudentStore {
       });
       localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
       window.dispatchEvent(new Event('vajra_videos_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /* =========================================================================
+      IN-APP REAL-TIME STUDENT-ADMIN MESSAGES & DOUBT DESK (NO WHATSAPP NEEDED)
+     ========================================================================= */
+  static getAllMessages(): VajraMessage[] {
+    if (typeof window === 'undefined') return [];
+    try {
+      const data = localStorage.getItem(MESSAGES_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static getStudentMessages(studentCode: string): VajraMessage[] {
+    const all = this.getAllMessages();
+    const upper = studentCode.toUpperCase().trim();
+    return all.filter(m => m.studentCode.toUpperCase().trim() === upper);
+  }
+
+  static sendStudentMessage(student: VajraStudent, messageText: string): VajraMessage {
+    const all = this.getAllMessages();
+    const now = new Date();
+    const timeStr = now.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    const newMsg: VajraMessage = {
+      id: `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      studentCode: student.accessCode.toUpperCase(),
+      studentName: student.name,
+      studentPhone: student.phone,
+      course: student.course,
+      message: messageText.trim(),
+      createdAt: timeStr,
+      timestamp: Date.now(),
+      status: 'UNREAD'
+    };
+
+    all.unshift(newMsg);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(all));
+        // Auto Sync to Cloud
+        syncMessageToCloud(newMsg);
+        window.dispatchEvent(new Event('vajra_messages_updated'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return newMsg;
+  }
+
+  static replyToMessage(messageId: string, replyText: string): boolean {
+    const all = this.getAllMessages();
+    const msg = all.find(m => m.id === messageId);
+    if (!msg) return false;
+
+    msg.reply = replyText.trim();
+    msg.repliedAt = new Date().toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    msg.status = 'REPLIED';
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(all));
+        // Auto Sync reply to Cloud
+        replyMessageInCloud(messageId, replyText.trim());
+        window.dispatchEvent(new Event('vajra_messages_updated'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return true;
+  }
+
+  static deleteMessage(messageId: string): boolean {
+    let all = this.getAllMessages();
+    all = all.filter(m => m.id !== messageId);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(all));
+        // Auto Delete from Cloud
+        deleteMessageFromCloud(messageId);
+        window.dispatchEvent(new Event('vajra_messages_updated'));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return true;
+  }
+
+  static syncMessagesFromCloud(cloudMessages: VajraMessage[]) {
+    if (typeof window === 'undefined' || !cloudMessages) return;
+    try {
+      localStorage.setItem(MESSAGES_KEY, JSON.stringify(cloudMessages));
+      window.dispatchEvent(new Event('vajra_messages_updated'));
     } catch (e) {
       console.error(e);
     }

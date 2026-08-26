@@ -4,13 +4,13 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { VajraStudent, VajraStudentStore, TrainingVideo } from "@/lib/store";
-import { listenToMeetLinksCloud, listenToVideosCloud } from "@/lib/firebase";
+import { VajraStudent, VajraStudentStore, TrainingVideo, VajraMessage } from "@/lib/store";
+import { listenToMeetLinksCloud, listenToVideosCloud, listenToMessagesCloud } from "@/lib/firebase";
 import { 
   User, Shield, Flame, Dumbbell, Sparkles, CheckCircle2, 
   Copy, Check, LogOut, MessageSquare, Phone, ChevronRight, 
   ChevronLeft, Video, Play, ExternalLink, Radio, Pause, 
-  Calendar, Clock, Award
+  Calendar, Clock, Award, Send
 } from "lucide-react";
 
 export default function StudentPortalPage() {
@@ -23,6 +23,11 @@ export default function StudentPortalPage() {
   const [currentVideoIdx, setCurrentVideoIdx] = useState(0);
   const [isCarouselPaused, setIsCarouselPaused] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // In-App Chat / Messages State
+  const [myMessages, setMyMessages] = useState<VajraMessage[]>([]);
+  const [inputMsg, setInputMsg] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Real-time Meet Link & Live Timestamp Notification
   const [meetInfo, setMeetInfo] = useState<{ url: string; updatedAt: number | null; timeAgoText: string; isRecent: boolean }>({
@@ -41,6 +46,7 @@ export default function StudentPortalPage() {
       const vids = VajraStudentStore.getCourseVideos(existing.course);
       setVideos(vids);
       setMeetInfo(VajraStudentStore.getMeetLinkInfo(existing.course));
+      setMyMessages(VajraStudentStore.getStudentMessages(existing.accessCode));
     }
   }, [router]);
 
@@ -52,11 +58,18 @@ export default function StudentPortalPage() {
       setMeetInfo(info);
     };
 
+    const updateMsgs = () => {
+      setMyMessages(VajraStudentStore.getStudentMessages(student.accessCode));
+    };
+
     updateMeet();
+    updateMsgs();
+
     window.addEventListener("vajra_meet_link_updated", updateMeet);
     window.addEventListener("vajra_videos_updated", () => {
       setVideos(VajraStudentStore.getCourseVideos(student.course));
     });
+    window.addEventListener("vajra_messages_updated", updateMsgs);
 
     const unsubMeet = listenToMeetLinksCloud((cloudLinks) => {
       if (cloudLinks && Object.keys(cloudLinks).length > 0) {
@@ -72,15 +85,36 @@ export default function StudentPortalPage() {
       }
     });
 
+    const unsubMsgs = listenToMessagesCloud((cloudMsgs) => {
+      if (cloudMsgs && cloudMsgs.length > 0) {
+        VajraStudentStore.syncMessagesFromCloud(cloudMsgs);
+        setMyMessages(VajraStudentStore.getStudentMessages(student.accessCode));
+      }
+    });
+
     const interval = setInterval(updateMeet, 10000);
 
     return () => {
       window.removeEventListener("vajra_meet_link_updated", updateMeet);
+      window.removeEventListener("vajra_messages_updated", updateMsgs);
       unsubMeet();
       unsubVideos();
+      unsubMsgs();
       clearInterval(interval);
     };
   }, [student]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!student || !inputMsg.trim()) return;
+
+    setIsSending(true);
+    VajraStudentStore.sendStudentMessage(student, inputMsg.trim());
+    setInputMsg("");
+    setMyMessages(VajraStudentStore.getStudentMessages(student.accessCode));
+    setIsSending(false);
+    showNotification("Message sent to master coach!");
+  };
 
   const handleCopyCode = () => {
     if (student?.accessCode) {
@@ -789,74 +823,128 @@ export default function StudentPortalPage() {
           </div>
 
           {/* =====================================================================
-              SECTION 4: DOUBT & CONTACT
+              SECTION 4: IN-APP LIVE INSTRUCTOR DESK & DOUBT CENTER
              ===================================================================== */}
-          <div className={activeTab === "doubt" ? "grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 animate-fade-in max-w-4xl mx-auto" : "hidden"}>
+          <div className={activeTab === "doubt" ? "block space-y-6 animate-fade-in max-w-4xl mx-auto" : "hidden"}>
             
-            {/* Ask Coach */}
-            <div className="p-4 sm:p-6 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase">
-                  <MessageSquare className="w-4 h-4 shrink-0" />
-                  <span>Coach WhatsApp Hotline</span>
+            {/* Top In-App Chat Header & Composer */}
+            <div className="p-5 sm:p-7 rounded-3xl bg-[#0D1220] border border-slate-800 space-y-5 shadow-2xl">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <MessageSquare className="w-5 h-5 text-sky-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white">
+                      Instructor Message Desk
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Send doubts directly to your master coach inside the academy portal.
+                    </p>
+                  </div>
                 </div>
-                <h4 className="text-base sm:text-lg font-bold text-white">Ask Training Doubts</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Send your practice videos or posture questions directly to the head master coach.
-                </p>
+
+                <span className="px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold self-start sm:self-auto">
+                  ● Direct Coach Line
+                </span>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="p-3 rounded-xl bg-[#141A2E] text-xs flex items-center justify-between text-slate-300">
-                  <span>Student Code:</span>
-                  <strong className="text-blue-400 font-mono">{student.accessCode}</strong>
+              {/* Message Composer */}
+              <form onSubmit={handleSendMessage} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    Ask a Question or Form Doubt ({student.course})
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={inputMsg}
+                    onChange={(e) => setInputMsg(e.target.value)}
+                    placeholder="Type your question or form doubt here (e.g., stance correction, drill clarification)..."
+                    className="w-full px-4 py-3 rounded-2xl bg-[#141A2E] border border-slate-700/80 text-white text-xs sm:text-sm focus:border-blue-500 focus:outline-none transition resize-none placeholder:text-slate-500"
+                  />
                 </div>
 
-                <a
-                  href={`https://wa.me/918668102797?text=${encodeURIComponent(`Hello Coach, I am ${student.name} (Code: ${student.accessCode}). I have a question regarding my ${student.course} practice.`)}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full min-h-[44px] py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white font-semibold text-xs flex items-center justify-center gap-2 transition"
-                >
-                  <MessageSquare className="w-4 h-4 shrink-0" />
-                  <span>Message Coach on WhatsApp</span>
-                </a>
-              </div>
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <span className="text-[11px] text-slate-400">
+                    Coach replies will appear directly in this feed.
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={isSending || !inputMsg.trim()}
+                    className="min-h-[42px] px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition shadow-md shadow-blue-600/30 flex items-center gap-2"
+                  >
+                    <span>{isSending ? "Sending..." : "Send Message"}</span>
+                  </button>
+                </div>
+              </form>
+
             </div>
 
-            {/* Academy Reception */}
-            <div className="p-4 sm:p-6 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-blue-400 text-xs font-semibold uppercase">
-                  <Phone className="w-4 h-4 shrink-0" />
-                  <span>Academy Office Desk</span>
-                </div>
-                <h4 className="text-base sm:text-lg font-bold text-white">Schedule & Batch Inquiries</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  For batch timing changes, admissions, or official certificate inquiries.
-                </p>
+            {/* In-App Live Messages History Feed */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Your Conversation with Coach ({myMessages.length})
+                </h4>
               </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="p-3 rounded-xl bg-[#141A2E] text-xs space-y-1">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Phone:</span>
-                    <span className="text-white font-mono">+91 86681 02797</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Timings:</span>
-                    <span className="text-slate-300">05:30 AM – 08:30 PM</span>
-                  </div>
+              {myMessages.length === 0 ? (
+                <div className="p-8 rounded-2xl bg-[#0B0E19] border border-dashed border-slate-800 text-center space-y-2">
+                  <MessageSquare className="w-8 h-8 text-slate-600 mx-auto" />
+                  <strong className="text-white text-sm block">No Messages Yet</strong>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    Type a question above to start communicating with your academy instructors.
+                  </p>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  {myMessages.map((msg) => (
+                    <div 
+                      key={msg.id}
+                      className="p-4 sm:p-5 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-3 shadow-lg"
+                    >
+                      {/* Student Message */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-white">{student.name}</span>
+                            <span className="text-[10px] text-slate-400">• {msg.createdAt}</span>
+                          </div>
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed break-words bg-[#13192B] p-3 rounded-xl border border-slate-800/80">
+                            {msg.message}
+                          </p>
+                        </div>
 
-                <a
-                  href="tel:+918668102797"
-                  className="w-full min-h-[44px] py-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs flex items-center justify-center gap-2 transition"
-                >
-                  <Phone className="w-4 h-4 shrink-0" />
-                  <span>Call Academy Desk</span>
-                </a>
-              </div>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold shrink-0 ${
+                          msg.status === "REPLIED" 
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
+                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        }`}>
+                          {msg.status === "REPLIED" ? "● Replied" : "● Sent to Coach"}
+                        </span>
+                      </div>
+
+                      {/* Coach Reply if available */}
+                      {msg.reply && (
+                        <div className="ml-4 sm:ml-6 pl-3 border-l-2 border-blue-500 space-y-1.5 pt-1">
+                          <div className="flex items-center gap-2">
+                            <strong className="text-xs text-blue-400 font-bold">Master Coach Response</strong>
+                            {msg.repliedAt && (
+                              <span className="text-[10px] text-slate-400">• {msg.repliedAt}</span>
+                            )}
+                          </div>
+                          <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/30 text-xs text-blue-100 leading-relaxed break-words">
+                            {msg.reply}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>

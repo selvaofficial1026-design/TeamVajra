@@ -92,7 +92,7 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     const accessCode = generateRandomCode();
     setGeneratedCode(accessCode);
 
-    // Save actual student profile
+    // Save actual student profile & auto-sync to Cloud
     const student = VajraStudentStore.createStudentProfile(
       accessCode,
       regName.trim(),
@@ -103,11 +103,6 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     );
     VajraStudentStore.setStudent(student);
 
-    const message = `*Team Vajra Student Registration & Enrollment*%0A%0A*Name:* ${encodeURIComponent(regName)}%0A*WhatsApp:* ${encodeURIComponent(regPhone)}%0A*Selected Course:* ${encodeURIComponent(regCourse)}%0A*Age Group:* ${encodeURIComponent(regAgeGroup)}%0A*Preferred Batch:* ${encodeURIComponent(regBatchTime)}%0A*Student Access Code:* ${encodeURIComponent(accessCode)}%0A%0APlease confirm my registration and batch slot.`;
-    
-    // Transmit to WhatsApp
-    window.open(`https://wa.me/918668102797?text=${message}`, "_blank");
-    
     setSuccessType("register");
     setIsSuccess(true);
   };
