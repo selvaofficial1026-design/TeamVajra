@@ -17,7 +17,7 @@ import {
 
 export default function StudentPortalPage() {
   const router = useRouter();
-  const { selectedTz, convertBatch, liveTime } = useVajraTimezone();
+  const { selectedTz, convertBatch, liveTime, liveDate, istLiveTime } = useVajraTimezone();
   const [student, setStudent] = useState<VajraStudent | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "videos" | "meet" | "doubt">("profile");
@@ -323,6 +323,41 @@ export default function StudentPortalPage() {
       <main className="flex-1 py-4 sm:py-8">
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-5 sm:space-y-8">
           
+          {/* =========================================================================
+              ACADEMY DUAL TIMING HUB (LEFT: DEFAULT INDIA IST | RIGHT: SELECTED COUNTRY / LOCAL TIME)
+             ========================================================================= */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0D1220] border border-blue-500/25 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 animate-fade-in">
+            
+            {/* LEFT SIDE: DEFAULT INDIA TIMING (IST) */}
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-2xl shrink-0">🇮🇳</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                  <span className="font-bold text-white uppercase tracking-wider text-[11px] sm:text-xs">India Standard Time (IST)</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-600/20 text-blue-400 text-[10px] font-mono font-bold border border-blue-500/30">Default Dojo Time</span>
+                </div>
+                <div className="text-sm sm:text-base font-bold text-blue-400 font-mono flex items-center gap-2 mt-0.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-400 animate-pulse shrink-0" />
+                  <span>{istLiveTime || liveTime}</span>
+                  <span className="text-xs text-slate-400 font-normal font-sans">({liveDate})</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT SIDE: SELECTED COUNTRY / INTERNATIONAL TIMINGS */}
+            <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/80">
+              <div className="text-right hidden md:block min-w-0">
+                <span className="text-[11px] text-slate-400 block">Switch Country / Timezone:</span>
+                <span className="text-xs font-mono font-bold text-sky-400">
+                  {selectedTz.flag} {selectedTz.code}: {liveTime}
+                </span>
+              </div>
+
+              <TimezoneSelector compact={false} className="shrink-0" />
+            </div>
+
+          </div>
+
           {/* =========================================================================
               REAL-TIME LIVE GOOGLE MEET CLASS ANNOUNCEMENT BANNER
              ========================================================================= */}

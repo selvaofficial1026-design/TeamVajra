@@ -191,9 +191,6 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
                 })}
               </nav>
 
-              {/* World Clock & Country Timezone Selector */}
-              <TimezoneSelector compact className="shrink-0" />
-
               {/* Logged-In Student vs Member Login Trigger */}
               {activeStudent ? (
                 <Link
@@ -241,8 +238,6 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
 
             {/* Mobile Actions: Touch targets >= 44px */}
             <div className="md:hidden flex items-center gap-1.5">
-              <TimezoneSelector compact className="py-1 px-2 text-[11px]" />
-
               {activeStudent ? (
                 <Link
                   href="/portal"
@@ -276,11 +271,6 @@ export default function Navbar({ onOpenBooking }: NavbarProps) {
         {/* Mobile Menu Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#0A0E1A]/98 border-b border-white/[0.08] px-4 pt-3 pb-6 space-y-2 backdrop-blur-2xl shadow-2xl animate-fade-in">
-            {/* World Clock Country Selector for Mobile */}
-            <div className="pb-2 border-b border-white/[0.06]">
-              <TimezoneSelector className="w-full justify-between" />
-            </div>
-
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
