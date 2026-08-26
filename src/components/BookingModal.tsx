@@ -7,7 +7,7 @@ import { VajraStudentStore } from "@/lib/store";
 import VajraAlertModal from "./VajraAlertModal";
 import { 
   X, CheckCircle2, ArrowRight, MessageSquare, User, 
-  KeyRound, Copy, Check, LogIn, AlertCircle
+  KeyRound, Copy, Check, LogIn, AlertCircle, Clock
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -89,20 +89,17 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     }
 
     setPhoneExistsError(null);
-    const accessCode = generateRandomCode();
-    setGeneratedCode(accessCode);
 
-    // Save actual student profile & auto-sync to Cloud
-    const student = VajraStudentStore.createStudentProfile(
-      accessCode,
+    // Save pending student profile with Tracking Reference Code
+    const { student, requestCode } = VajraStudentStore.createPendingAdmission(
       regName.trim(),
       regPhone.trim(),
       regCourse,
       regAgeGroup,
       regBatchTime
     );
-    VajraStudentStore.setStudent(student);
 
+    setGeneratedCode(requestCode);
     setSuccessType("register");
     setIsSuccess(true);
   };
@@ -128,21 +125,23 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
     const code = loginCode.trim().toUpperCase();
     const registered = VajraStudentStore.getMemberFromRegistry(code);
     if (registered) {
+      if (registered.approvalStatus === "PENDING_APPROVAL") {
+        setSystemAlert({
+          title: "Waiting for Admin Approval",
+          message: `Your admission request (${code}) is currently under review by Academy Admin. Please check back shortly once approved.`,
+          type: "warning"
+        });
+        return;
+      }
       VajraStudentStore.setStudent(registered);
+      handleEnterPortal();
     } else {
-      const newStudent = VajraStudentStore.createStudentProfile(
-        code,
-        regName || "Member",
-        regPhone || "+91 86681 02797",
-        regCourse || "MARTIAL ARTS",
-        regAgeGroup,
-        regBatchTime
-      );
-      VajraStudentStore.setStudent(newStudent);
+      setSystemAlert({
+        title: "Access Code Not Found",
+        message: `No student profile found for code "${loginCode}". Please verify your code or register as a new student.`,
+        type: "error"
+      });
     }
-
-    onClose();
-    router.push("/portal");
   };
 
   const handleEnterPortal = () => {
@@ -399,63 +398,60 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
         ) : (
           
           /* =========================================================================
-              SUCCESS STATE: GENERATED CODE + ENROLLMENT BADGE
+              SUCCESS STATE: WAITING FOR ADMIN APPROVAL + TRACKING CODE
              ========================================================================= */
           <div className="text-center py-2 space-y-4">
             
-            {/* Top Success Badge */}
-            <div className="relative w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-md shadow-emerald-950/40">
-              <CheckCircle2 className="w-7 h-7" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
+            {/* Top Badge */}
+            <div className="relative w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-md">
+              <Clock className="w-7 h-7 animate-pulse" />
             </div>
 
             <div>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 inline-block mb-1">
-                ● ENROLLMENT CONFIRMED
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 inline-block mb-1">
+                ● WAITING FOR ADMIN APPROVAL
               </span>
               <h3 className="font-display text-lg sm:text-xl font-bold text-white tracking-tight">
-                {successType === "register" ? "Registration Submitted" : "Welcome Back"}
+                Admission Application Submitted!
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                Your official access code has been generated. Use it anytime to enter your portal.
+                Your admission request has been sent for Academy Admin review. Please save your Tracking Code.
               </p>
             </div>
 
-            {/* Generated Code with Copy Button */}
-            {successType === "register" && (
-              <div className="p-3.5 rounded-2xl bg-[#13192B] border border-blue-500/40 space-y-2 shadow-md">
-                <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
-                  Your Student Access Code
+            {/* Tracking Reference Code with Copy Button */}
+            <div className="p-3.5 rounded-2xl bg-[#13192B] border border-amber-500/40 space-y-2 shadow-md">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider block">
+                Your Tracking Reference Code
+              </span>
+              <div className="flex items-center justify-center gap-2.5">
+                <span className="font-mono text-xl sm:text-2xl font-black text-amber-400 tracking-wider">
+                  {generatedCode}
                 </span>
-                <div className="flex items-center justify-center gap-2.5">
-                  <span className="font-mono text-xl sm:text-2xl font-black text-blue-400 tracking-wider">
-                    {generatedCode}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 transition flex items-center justify-center gap-1.5 text-xs font-semibold active:scale-95"
-                  >
-                    {codeCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    <span>{codeCopied ? "Copied" : "Copy"}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="min-h-[44px] min-w-[44px] px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 transition flex items-center justify-center gap-1.5 text-xs font-semibold active:scale-95"
+                >
+                  {codeCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  <span>{codeCopied ? "Copied" : "Copy"}</span>
+                </button>
               </div>
-            )}
+            </div>
 
-            {/* Student ID Card Preview */}
+            {/* Application Summary */}
             <div className="p-3.5 rounded-2xl bg-[#0C101F] border border-slate-800 text-left space-y-2 text-xs">
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
-                <span className="text-[10px] font-mono text-slate-400 uppercase">Student Pass Summary</span>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  ACTIVE
+                <span className="text-[10px] font-mono text-slate-400 uppercase">Application Status</span>
+                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  UNDER REVIEW
                 </span>
               </div>
               
               <div className="grid grid-cols-2 gap-2 text-slate-300">
                 <div>
-                  <span className="text-[9px] font-mono text-slate-500 block uppercase">Member</span>
-                  <strong className="text-white text-xs block truncate">{regName || "Member"}</strong>
+                  <span className="text-[9px] font-mono text-slate-500 block uppercase">Applicant</span>
+                  <strong className="text-white text-xs block truncate">{regName || "Applicant"}</strong>
                 </div>
                 <div>
                   <span className="text-[9px] font-mono text-slate-500 block uppercase">Course</span>
@@ -475,10 +471,13 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
             <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
               <button
                 type="button"
-                onClick={handleEnterPortal}
+                onClick={() => {
+                  onClose();
+                  router.push("/login");
+                }}
                 className="min-h-[44px] flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-md shadow-blue-600/30 text-center"
               >
-                <span>Enter Student Portal</span>
+                <span>Track Status in Login Portal</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 

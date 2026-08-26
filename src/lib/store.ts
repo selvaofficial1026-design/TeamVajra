@@ -11,6 +11,8 @@ import {
 
 export interface VajraStudent {
   accessCode: string;
+  requestCode?: string;
+  approvalStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
   name: string;
   phone: string;
   course: string;
@@ -83,6 +85,10 @@ export class VajraStudentStore {
     try {
       const registry = this.getMembersRegistry();
       registry[student.accessCode.toUpperCase()] = student;
+      // If student has a separate requestCode, index it too
+      if (student.requestCode) {
+        registry[student.requestCode.toUpperCase()] = student;
+      }
       localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
       
       // Auto Sync to Cloud Firestore
@@ -99,6 +105,9 @@ export class VajraStudentStore {
       cloudStudents.forEach(st => {
         if (st && st.accessCode) {
           registry[st.accessCode.toUpperCase()] = st;
+          if (st.requestCode) {
+            registry[st.requestCode.toUpperCase()] = st;
+          }
         }
       });
       localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
@@ -123,7 +132,15 @@ export class VajraStudentStore {
 
   static getMemberFromRegistry(code: string): VajraStudent | null {
     const registry = this.getMembersRegistry();
-    return registry[code.toUpperCase()] || null;
+    const clean = code.toUpperCase().trim();
+    if (registry[clean]) return registry[clean];
+    
+    // Fallback search across all members
+    const all = Object.values(registry);
+    return all.find(s => 
+      s.accessCode.toUpperCase().trim() === clean || 
+      (s.requestCode && s.requestCode.toUpperCase().trim() === clean)
+    ) || null;
   }
 
   static getStudent(): VajraStudent | null {
@@ -148,6 +165,49 @@ export class VajraStudentStore {
     window.dispatchEvent(new Event('vajra_student_change'));
   }
 
+  /* =========================================================================
+      ADMISSION WORKFLOW: PENDING REGISTRATION WITH TRACKING CODE
+     ========================================================================= */
+  static createPendingAdmission(
+    name: string, 
+    phone: string, 
+    course: string, 
+    ageGroup: string, 
+    batchTime: string
+  ): { student: VajraStudent; requestCode: string } {
+    const selectedCourse = course || 'MARTIAL ARTS';
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const renewalDate = `1st of ${nextMonth.toLocaleDateString('en-US', { month: 'short' })}`;
+
+    const requestCode = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const pendingStudent: VajraStudent = {
+      accessCode: requestCode, // Initial tracking code
+      requestCode: requestCode,
+      approvalStatus: 'PENDING_APPROVAL',
+      name: name.trim() || "Applicant",
+      phone: phone.trim() || "+91 86681 02797",
+      course: selectedCourse,
+      ageGroup: ageGroup || 'Adult (18–45 yrs)',
+      batchTime: batchTime || 'Morning (05:30 AM – 07:30 AM)',
+      joinedDate: today,
+      attendanceRate: 100,
+      attendedClasses: 1,
+      totalClasses: 1,
+      streakDays: 1,
+      nextAssessment: `15th of ${nextMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+      feeStatus: 'ACTIVE',
+      feeRenewalDate: renewalDate,
+      completedDrills: []
+    };
+
+    this.saveMemberToRegistry(pendingStudent);
+    return { student: pendingStudent, requestCode };
+  }
+
   static createStudentProfile(
     code: string, 
     name: string, 
@@ -165,6 +225,7 @@ export class VajraStudentStore {
 
     const newStudent: VajraStudent = {
       accessCode: code.toUpperCase().trim(),
+      approvalStatus: 'APPROVED',
       name: name.trim() || "Member",
       phone: phone.trim() || "+91 86681 02797",
       course: selectedCourse,
@@ -185,24 +246,95 @@ export class VajraStudentStore {
     return newStudent;
   }
 
+  static approveAdmission(codeOrRequest: string): VajraStudent | null {
+    const registry = this.getMembersRegistry();
+    const clean = codeOrRequest.toUpperCase().trim();
+    const student = this.getMemberFromRegistry(clean);
+    if (!student) return null;
+
+    // Generate permanent VIP Student Access Code
+    const permanentCode = `VAJRA-${Math.floor(1000 + Math.random() * 9000)}`;
+    const oldRequestCode = student.requestCode || student.accessCode;
+
+    student.accessCode = permanentCode;
+    student.requestCode = oldRequestCode; // keep as alias so tracking returns the approved code!
+    student.approvalStatus = 'APPROVED';
+
+    registry[permanentCode] = student;
+    registry[oldRequestCode] = student;
+    
+    try {
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      
+      const active = this.getStudent();
+      if (active && (active.accessCode === oldRequestCode || active.requestCode === oldRequestCode)) {
+        localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(student));
+        window.dispatchEvent(new Event('vajra_student_change'));
+      }
+
+      // Auto Sync to Cloud
+      syncStudentToCloud(student);
+      window.dispatchEvent(new Event('vajra_registry_change'));
+    } catch (e) {
+      console.error(e);
+    }
+
+    return student;
+  }
+
+  static rejectAdmission(codeOrRequest: string): boolean {
+    const registry = this.getMembersRegistry();
+    const clean = codeOrRequest.toUpperCase().trim();
+    const student = this.getMemberFromRegistry(clean);
+    if (!student) return false;
+
+    student.approvalStatus = 'REJECTED';
+    registry[student.accessCode.toUpperCase()] = student;
+    if (student.requestCode) {
+      registry[student.requestCode.toUpperCase()] = student;
+    }
+
+    try {
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      syncStudentToCloud(student);
+      window.dispatchEvent(new Event('vajra_registry_change'));
+    } catch (e) {
+      console.error(e);
+    }
+    return true;
+  }
+
   static getAllStudents(): VajraStudent[] {
     const registry = this.getMembersRegistry();
-    return Object.values(registry);
+    const map = new Map<string, VajraStudent>();
+    Object.values(registry).forEach(st => {
+      // Group by phone or primary access code to avoid duplicate alias entries
+      const key = st.phone || st.accessCode;
+      if (!map.has(key) || st.approvalStatus === 'APPROVED') {
+        map.set(key, st);
+      }
+    });
+    return Array.from(map.values());
   }
 
   static updateStudent(code: string, updates: Partial<VajraStudent>): VajraStudent | null {
     if (typeof window === 'undefined') return null;
     const registry = this.getMembersRegistry();
     const upperCode = code.toUpperCase().trim();
-    if (!registry[upperCode]) return null;
+    const student = this.getMemberFromRegistry(upperCode);
+    if (!student) return null;
 
-    const updated = { ...registry[upperCode], ...updates };
-    registry[upperCode] = updated;
+    const updated = { ...student, ...updates };
+    registry[updated.accessCode.toUpperCase()] = updated;
+    if (updated.requestCode) {
+      registry[updated.requestCode.toUpperCase()] = updated;
+    }
+
     try {
       localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
       
       const active = this.getStudent();
-      if (active && active.accessCode.toUpperCase() === upperCode) {
+      if (active && (active.accessCode.toUpperCase() === upperCode || active.requestCode?.toUpperCase() === upperCode)) {
         localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(updated));
         window.dispatchEvent(new Event('vajra_student_change'));
       }
@@ -219,19 +351,24 @@ export class VajraStudentStore {
     if (typeof window === 'undefined') return false;
     const registry = this.getMembersRegistry();
     const upperCode = code.toUpperCase().trim();
-    if (!registry[upperCode]) return false;
+    const student = this.getMemberFromRegistry(upperCode);
+    if (!student) return false;
 
-    delete registry[upperCode];
+    delete registry[student.accessCode.toUpperCase()];
+    if (student.requestCode) {
+      delete registry[student.requestCode.toUpperCase()];
+    }
+
     try {
       localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
       const active = this.getStudent();
-      if (active && active.accessCode.toUpperCase() === upperCode) {
+      if (active && (active.accessCode.toUpperCase() === upperCode || active.requestCode?.toUpperCase() === upperCode)) {
         localStorage.removeItem(ACTIVE_STUDENT_KEY);
         window.dispatchEvent(new Event('vajra_student_change'));
       }
 
       // Auto Delete from Cloud
-      deleteStudentFromCloud(upperCode);
+      deleteStudentFromCloud(student.accessCode.toUpperCase());
     } catch (e) {
       console.error(e);
     }

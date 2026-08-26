@@ -259,6 +259,22 @@ export default function AdminPortalPage() {
     showToast(`Student ${newStudent.name} (${newStudent.accessCode}) registered`);
   };
 
+  const handleApproveStudent = (student: VajraStudent) => {
+    const approved = VajraStudentStore.approveAdmission(student.requestCode || student.accessCode);
+    if (approved) {
+      setStudents(VajraStudentStore.getAllStudents());
+      showToast(`Approved ${approved.name}! Permanent Code: ${approved.accessCode}`);
+    }
+  };
+
+  const handleRejectStudent = (student: VajraStudent) => {
+    if (confirm(`Reject admission request for ${student.name}?`)) {
+      VajraStudentStore.rejectAdmission(student.requestCode || student.accessCode);
+      setStudents(VajraStudentStore.getAllStudents());
+      showToast(`Admission request for ${student.name} rejected`);
+    }
+  };
+
   const handleToggleFeeStatus = (student: VajraStudent) => {
     const newStatus = student.feeStatus === "ACTIVE" ? "DUE" : "ACTIVE";
     VajraStudentStore.updateStudent(student.accessCode, { feeStatus: newStatus });
@@ -771,7 +787,7 @@ export default function AdminPortalPage() {
                           key={st.accessCode}
                           className="p-4 rounded-xl bg-[#141A2E] border border-slate-800 space-y-3 shadow-sm"
                         >
-                          {/* Card Header: Name, Access Code & Fee Badge */}
+                          {/* Card Header: Name, Access Code & Fee/Approval Badge */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <h4 className="font-bold text-white text-sm truncate">{st.name}</h4>
@@ -782,20 +798,30 @@ export default function AdminPortalPage() {
                             </div>
 
                             <div className="flex flex-col items-end gap-1 shrink-0">
-                              <span className="px-2 py-0.5 rounded bg-blue-600/20 border border-blue-500/30 text-blue-400 font-mono font-bold text-[11px]">
+                              <span className={`px-2 py-0.5 rounded border font-mono font-bold text-[11px] ${
+                                st.approvalStatus === "PENDING_APPROVAL"
+                                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                                  : "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                              }`}>
                                 {st.accessCode}
                               </span>
-                              <button
-                                onClick={() => handleToggleFeeStatus(st)}
-                                className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition ${
-                                  st.feeStatus === "ACTIVE"
-                                    ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
-                                    : "bg-red-500/15 border-red-500/30 text-red-400"
-                                }`}
-                                title="Click to toggle status"
-                              >
-                                {st.feeStatus}
-                              </button>
+                              {st.approvalStatus === "PENDING_APPROVAL" ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                                  ⏳ Waitlist
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => handleToggleFeeStatus(st)}
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition ${
+                                    st.feeStatus === "ACTIVE"
+                                      ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                                      : "bg-red-500/15 border-red-500/30 text-red-400"
+                                  }`}
+                                  title="Click to toggle status"
+                                >
+                                  {st.feeStatus}
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -814,33 +840,52 @@ export default function AdminPortalPage() {
                           </div>
 
                           {/* Touch-Friendly Action Bar */}
-                          <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/50 text-xs font-medium">
-                            <a
-                              href={`https://wa.me/${st.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${st.name}, this is Team Vajra Academy regarding your ${st.course} classes.`)}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="py-2 px-2 rounded-lg bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/20 flex items-center justify-center gap-1.5 transition"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-                              <span>WhatsApp</span>
-                            </a>
+                          {st.approvalStatus === "PENDING_APPROVAL" ? (
+                            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-700/50 text-xs font-medium">
+                              <button
+                                onClick={() => handleApproveStudent(st)}
+                                className="py-2.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 transition shadow"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Approve Admission</span>
+                              </button>
+                              <button
+                                onClick={() => handleRejectStudent(st)}
+                                className="py-2.5 px-2 rounded-lg bg-red-600/20 text-red-300 hover:bg-red-600/30 border border-red-500/20 flex items-center justify-center gap-1.5 transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/50 text-xs font-medium">
+                              <a
+                                href={`https://wa.me/${st.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${st.name}, this is Team Vajra Academy regarding your ${st.course} classes.`)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="py-2 px-2 rounded-lg bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/20 flex items-center justify-center gap-1.5 transition"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                                <span>WhatsApp</span>
+                              </a>
 
-                            <button
-                              onClick={() => setEditingStudent({ ...st })}
-                              className="py-2 px-2 rounded-lg bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/20 flex items-center justify-center gap-1.5 transition"
-                            >
-                              <Edit2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>Edit</span>
-                            </button>
+                              <button
+                                onClick={() => setEditingStudent({ ...st })}
+                                className="py-2 px-2 rounded-lg bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 border border-blue-500/20 flex items-center justify-center gap-1.5 transition"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Edit</span>
+                              </button>
 
-                            <button
-                              onClick={() => handleDeleteStudent(st.accessCode, st.name)}
-                              className="py-2 px-2 rounded-lg bg-red-600/20 text-red-300 hover:bg-red-600/30 border border-red-500/20 flex items-center justify-center gap-1.5 transition"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>Delete</span>
-                            </button>
-                          </div>
+                              <button
+                                onClick={() => handleDeleteStudent(st.accessCode, st.name)}
+                                className="py-2 px-2 rounded-lg bg-red-600/20 text-red-300 hover:bg-red-600/30 border border-red-500/20 flex items-center justify-center gap-1.5 transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -851,7 +896,7 @@ export default function AdminPortalPage() {
                         <thead>
                           <tr className="border-b border-slate-800 text-slate-400 font-medium">
                             <th className="pb-3 px-3">Student Name</th>
-                            <th className="pb-3 px-3">Student ID</th>
+                            <th className="pb-3 px-3">Status / ID</th>
                             <th className="pb-3 px-3">Course & Cohort</th>
                             <th className="pb-3 px-3">Batch Time</th>
                             <th className="pb-3 px-3">Fee Status</th>
@@ -866,8 +911,21 @@ export default function AdminPortalPage() {
                                 <span className="text-slate-400 text-xs font-mono">{st.phone}</span>
                               </td>
 
-                              <td className="py-3 px-3 font-mono font-bold text-blue-400 text-xs">
-                                {st.accessCode}
+                              <td className="py-3 px-3">
+                                {st.approvalStatus === "PENDING_APPROVAL" ? (
+                                  <div className="space-y-1">
+                                    <span className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono font-bold text-xs">
+                                      {st.accessCode}
+                                    </span>
+                                    <span className="block text-[10px] text-amber-400 font-semibold">
+                                      ⏳ Pending Approval
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="font-mono font-bold text-blue-400 text-xs">
+                                    {st.accessCode}
+                                  </span>
+                                )}
                               </td>
 
                               <td className="py-3 px-3">
@@ -880,47 +938,73 @@ export default function AdminPortalPage() {
                               </td>
 
                               <td className="py-3 px-3">
-                                <button
-                                  onClick={() => handleToggleFeeStatus(st)}
-                                  className={`px-2.5 py-1 rounded-md text-xs font-medium border transition ${
-                                    st.feeStatus === "ACTIVE"
-                                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                                      : "bg-red-500/10 border-red-500/20 text-red-400"
-                                  }`}
-                                  title="Click to toggle status"
-                                >
-                                  {st.feeStatus}
-                                </button>
+                                {st.approvalStatus === "PENDING_APPROVAL" ? (
+                                  <span className="px-2 py-1 rounded-md text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                    Under Review
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleFeeStatus(st)}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-medium border transition ${
+                                      st.feeStatus === "ACTIVE"
+                                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                                        : "bg-red-500/10 border-red-500/20 text-red-400"
+                                    }`}
+                                    title="Click to toggle status"
+                                  >
+                                    {st.feeStatus}
+                                  </button>
+                                )}
                               </td>
 
                               <td className="py-3 px-3 text-right">
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <a
-                                    href={`https://wa.me/${st.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${st.name}, this is Team Vajra Academy regarding your ${st.course} classes.`)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition"
-                                    title="WhatsApp Chat"
-                                  >
-                                    <MessageSquare className="w-3.5 h-3.5" />
-                                  </a>
+                                {st.approvalStatus === "PENDING_APPROVAL" ? (
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      onClick={() => handleApproveStudent(st)}
+                                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition shadow"
+                                      title="Approve & Generate Permanent ID"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" />
+                                      <span>Approve</span>
+                                    </button>
+                                    <button
+                                      onClick={() => handleRejectStudent(st)}
+                                      className="p-1.5 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition"
+                                      title="Reject Admission"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <a
+                                      href={`https://wa.me/${st.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hello ${st.name}, this is Team Vajra Academy regarding your ${st.course} classes.`)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="p-2 rounded-lg bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 transition"
+                                      title="WhatsApp Chat"
+                                    >
+                                      <MessageSquare className="w-3.5 h-3.5" />
+                                    </a>
 
-                                  <button
-                                    onClick={() => setEditingStudent({ ...st })}
-                                    className="p-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition"
-                                    title="Edit"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
+                                    <button
+                                      onClick={() => setEditingStudent({ ...st })}
+                                      className="p-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 transition"
+                                      title="Edit"
+                                    >
+                                      <Edit2 className="w-3.5 h-3.5" />
+                                    </button>
 
-                                  <button
-                                    onClick={() => handleDeleteStudent(st.accessCode, st.name)}
-                                    className="p-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition"
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
+                                    <button
+                                      onClick={() => handleDeleteStudent(st.accessCode, st.name)}
+                                      className="p-2 rounded-lg bg-red-600/20 text-red-400 hover:bg-red-600/30 transition"
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           ))}

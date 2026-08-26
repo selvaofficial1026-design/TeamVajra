@@ -4,19 +4,20 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { VajraStudentStore } from "@/lib/store";
+import { VajraStudent, VajraStudentStore } from "@/lib/store";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StudentVerificationSplash from "@/components/StudentVerificationSplash";
 import VajraAlertModal from "@/components/VajraAlertModal";
 import { 
   MessageSquare, User, Phone, CheckCircle2, Shield, ArrowRight, 
-  KeyRound, Sparkles, Dumbbell, Flame, Copy, Check, LogIn, AlertCircle
+  KeyRound, Sparkles, Dumbbell, Flame, Copy, Check, LogIn, AlertCircle,
+  Search, Clock, RefreshCw
 } from "lucide-react";
 
 export default function AuthPage() {
   const router = useRouter();
-  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  const [authMode, setAuthMode] = useState<"register" | "login" | "track">("register");
 
   // Custom System Notice Modal State
   const [systemAlert, setSystemAlert] = useState<{ title: string; message: string; type?: "error" | "warning" | "success" } | null>(null);
@@ -28,9 +29,14 @@ export default function AuthPage() {
   const [regAgeGroup, setRegAgeGroup] = useState("Adult (18–45 yrs)");
   const [regBatchTime, setRegBatchTime] = useState("Morning (05:30 AM – 07:30 AM)");
   
-  // Generated Student Access Code
+  // Tracking Code & Access Code State
   const [generatedCode, setGeneratedCode] = useState("");
   const [codeCopied, setCodeCopied] = useState(false);
+
+  // Track Status State
+  const [trackInput, setTrackInput] = useState("");
+  const [trackedStudent, setTrackedStudent] = useState<VajraStudent | null>(null);
+  const [trackSearched, setTrackSearched] = useState(false);
 
   // Login Form State
   const [loginCode, setLoginCode] = useState("");
@@ -49,11 +55,6 @@ export default function AuthPage() {
 
   // Duplicate Phone Error State
   const [phoneExistsError, setPhoneExistsError] = useState<{ name: string; code: string; course: string; phone: string } | null>(null);
-
-  const generateRandomCode = () => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `VAJRA-${randomNum}`;
-  };
 
   const triggerWelcomeTransition = (code: string, name: string, course?: string) => {
     setWelcomeStudentCode(code);
@@ -94,22 +95,40 @@ export default function AuthPage() {
     }
 
     setPhoneExistsError(null);
-    const accessCode = generateRandomCode();
-    setGeneratedCode(accessCode);
 
-    // Save actual student profile in local store & registry (Auto Sync to Cloud)
-    const student = VajraStudentStore.createStudentProfile(
-      accessCode,
+    // Create Pending Student with Tracking Reference Code
+    const { student, requestCode } = VajraStudentStore.createPendingAdmission(
       regName.trim(),
       regPhone.trim(),
       regCourse,
       regAgeGroup,
       regBatchTime
     );
-    VajraStudentStore.setStudent(student);
 
+    setGeneratedCode(requestCode);
     setSuccessType("register");
     setIsSuccess(true);
+  };
+
+  const handleTrackStatus = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!trackInput.trim()) {
+      setSystemAlert({
+        title: "Code or Phone Required",
+        message: "Please enter your Tracking Code (e.g. REQ-1234) or registered WhatsApp phone number.",
+        type: "warning"
+      });
+      return;
+    }
+
+    const clean = trackInput.trim();
+    let found = VajraStudentStore.getMemberFromRegistry(clean);
+    if (!found) {
+      found = VajraStudentStore.getStudentByPhone(clean);
+    }
+
+    setTrackSearched(true);
+    setTrackedStudent(found);
   };
 
   const handleCopyCode = () => {
@@ -120,19 +139,12 @@ export default function AuthPage() {
     }
   };
 
-  const handleSwitchToLoginWithCode = () => {
-    setLoginCode(generatedCode);
-    setLoginName(regName);
-    setAuthMode("login");
-    setIsSuccess(false);
-  };
-
   const handleVerifyLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginCode || loginCode.trim().length === 0) {
       setSystemAlert({
         title: "Access Code Required",
-        message: "Please enter or paste your Student Access Code or Password.",
+        message: "Please enter or paste your Student Access Code.",
         type: "warning"
       });
       return;
@@ -155,33 +167,28 @@ export default function AuthPage() {
     setIsAdminRedirect(false);
     const code = rawCode.toUpperCase();
 
-    // Check registry first
+    // Check registry
     const registered = VajraStudentStore.getMemberFromRegistry(code);
     if (registered) {
+      if (registered.approvalStatus === "PENDING_APPROVAL") {
+        setSystemAlert({
+          title: "Waiting for Admin Approval",
+          message: `Your admission request (${code}) is currently under review by the Academy Admin. Please check back shortly once approved.`,
+          type: "warning"
+        });
+        return;
+      }
       VajraStudentStore.setStudent(registered);
       triggerWelcomeTransition(registered.accessCode, registered.name, registered.course);
       return;
     }
 
-    // Check active session
-    const existing = VajraStudentStore.getStudent();
-    if (existing && existing.accessCode === code) {
-      triggerWelcomeTransition(existing.accessCode, existing.name, existing.course);
-      return;
-    }
-
-    // If new code login, use provided member name
-    const finalName = loginName.trim() || regName.trim() || "Student Member";
-    const newStudent = VajraStudentStore.createStudentProfile(
-      code,
-      finalName,
-      regPhone || "+91 86681 02797",
-      regCourse || "MARTIAL ARTS",
-      regAgeGroup || "Adult (18–45 yrs)",
-      regBatchTime || "Morning (05:30 AM – 07:30 AM)"
-    );
-    VajraStudentStore.setStudent(newStudent);
-    triggerWelcomeTransition(code, newStudent.name, newStudent.course);
+    // Direct Login Fallback
+    setSystemAlert({
+      title: "Access Code Not Found",
+      message: `No active student found for code "${rawCode}". If you recently registered, please use the "Track Approval" tab to check your status.`,
+      type: "error"
+    });
   };
 
   return (
@@ -190,7 +197,7 @@ export default function AuthPage() {
 
       <main className="flex-1 pt-28 sm:pt-36 pb-16 sm:pb-24 flex items-center justify-center px-3 sm:px-6 lg:px-8 relative overflow-hidden bg-radial-hero">
         
-        {/* Background Ambient Glow matching Team Vajra Theme */}
+        {/* Background Ambient Glow */}
         <div className="absolute top-28 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-600/10 blur-[130px] pointer-events-none rounded-full" />
         <div className="absolute top-44 left-1/4 w-56 h-56 bg-amber-500/10 blur-[100px] pointer-events-none rounded-full" />
 
@@ -211,11 +218,11 @@ export default function AuthPage() {
               Student Portal Access
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Official WhatsApp Registration & Instant Access Code Login
+              Admission Registration, Status Tracking & Portal Login
             </p>
           </div>
 
-          {/* Theme-Aligned Obsidian Dojo Card Container */}
+          {/* Theme-Aligned Obsidian Card Container */}
           <div className="rounded-2xl sm:rounded-3xl bg-[#0F1424] border border-slate-700/80 shadow-2xl p-4 sm:p-8 relative overflow-hidden ring-1 ring-white/10">
             
             {/* Top Accent Gradient Ribbon */}
@@ -224,38 +231,58 @@ export default function AuthPage() {
             {!isSuccess ? (
               <div>
                 
-                {/* Mode Selector Tabs (Optimized for 320px–390px screens) */}
-                <div className="grid grid-cols-2 p-1 rounded-xl sm:rounded-2xl bg-[#13192B] border border-slate-700/60 mb-5 sm:mb-6 gap-1">
+                {/* 3 Mode Selector Tabs */}
+                <div className="grid grid-cols-3 p-1 rounded-xl sm:rounded-2xl bg-[#13192B] border border-slate-700/60 mb-5 sm:mb-6 gap-1 text-[11px] sm:text-xs">
                   <button
                     type="button"
                     onClick={() => {
                       setAuthMode("register");
+                      setTrackSearched(false);
                     }}
-                    className={`min-h-[42px] py-2 px-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider rounded-lg sm:rounded-xl transition-all flex items-center justify-center text-center ${
+                    className={`min-h-[40px] py-2 px-1 font-bold uppercase rounded-lg sm:rounded-xl transition-all flex items-center justify-center text-center ${
                       authMode === "register"
                         ? "bg-blue-600 text-white shadow-md"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span>Register Student</span>
+                    <span className="truncate">Register</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setAuthMode("login")}
-                    className={`min-h-[42px] py-2 px-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider rounded-lg sm:rounded-xl transition-all flex items-center justify-center text-center ${
+                    onClick={() => {
+                      setAuthMode("track");
+                      setTrackSearched(false);
+                    }}
+                    className={`min-h-[40px] py-2 px-1 font-bold uppercase rounded-lg sm:rounded-xl transition-all flex items-center justify-center text-center ${
+                      authMode === "track"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <span className="truncate">Track Approval</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode("login");
+                      setTrackSearched(false);
+                    }}
+                    className={`min-h-[40px] py-2 px-1 font-bold uppercase rounded-lg sm:rounded-xl transition-all flex items-center justify-center text-center ${
                       authMode === "login"
                         ? "bg-blue-600 text-white shadow-md"
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span>Login With Code</span>
+                    <span className="truncate">Login</span>
                   </button>
                 </div>
 
                 {/* =========================================================================
-                    TAB 1: WHATSAPP REGISTRATION (No Placeholders)
+                    TAB 1: ADMISSION REGISTRATION
                    ========================================================================= */}
-                {authMode === "register" ? (
+                {authMode === "register" && (
                   <div className="space-y-4">
                     {/* ALREADY EXISTS ERROR BANNER */}
                     {phoneExistsError && (
@@ -293,7 +320,6 @@ export default function AuthPage() {
                     )}
 
                     <form onSubmit={handleRegisterSubmit} className="space-y-3.5 sm:space-y-4">
-                      
                       <div>
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                           Student Full Name
@@ -305,7 +331,7 @@ export default function AuthPage() {
                             required
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
-                            className="w-full pl-10 pr-3.5 py-2.5 sm:py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none transition"
+                            className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none transition"
                           />
                         </div>
                       </div>
@@ -324,7 +350,7 @@ export default function AuthPage() {
                             maxLength={10}
                             value={regPhone}
                             onChange={(e) => setRegPhone(e.target.value.replace(/\D/g, ""))}
-                            className="w-full pl-12 pr-3.5 py-2.5 sm:py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none font-mono transition"
+                            className="w-full pl-12 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none font-mono transition"
                           />
                         </div>
                       </div>
@@ -359,14 +385,14 @@ export default function AuthPage() {
                             <option value="Junior (5–12 yrs)">Junior (5–12 yrs)</option>
                             <option value="Teen (13–17 yrs)">Teen (13–17 yrs)</option>
                             <option value="Adult (18–45 yrs)">Adult (18–45 yrs)</option>
-                            <option value="Senior (45+ yrs)">Senior (45+ yrs)</option>
+                            <option value="Master/Senior (45+ yrs)">Senior (45+ yrs)</option>
                           </select>
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                          Preferred Batch Window
+                          Assigned Batch Schedule
                         </label>
                         <select
                           value={regBatchTime}
@@ -374,192 +400,248 @@ export default function AuthPage() {
                           className="w-full px-3 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-xs sm:text-xs font-semibold focus:border-blue-500 focus:outline-none transition"
                         >
                           <option value="Morning (05:30 AM – 07:30 AM)">Morning (05:30 AM – 07:30 AM)</option>
-                          <option value="Evening (05:00 PM – 07:00 PM)">Evening (05:00 PM – 07:00 PM)</option>
+                          <option value="Evening (05:00 PM – 06:30 PM)">Evening (05:00 PM – 06:30 PM)</option>
                           <option value="Night (07:00 PM – 08:30 PM)">Night (07:00 PM – 08:30 PM)</option>
                         </select>
                       </div>
 
-                      <button
-                        type="submit"
-                        className="w-full min-h-[46px] mt-3 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 active:scale-[0.98] text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
-                      >
-                        <MessageSquare className="w-4 h-4 shrink-0" />
-                        <span>Register via WhatsApp</span>
-                      </button>
-
-                      <p className="text-[11px] text-slate-400 text-center">
-                        Upon submission, your Student Access Code is generated instantly.
-                      </p>
-
-                    </form>
-                  </div>
-                ) : (
-                    
-                    /* =========================================================================
-                        TAB 2: LOGIN WITH ACCESS CODE (Direct Real Member Login)
-                       ========================================================================= */
-                    <form onSubmit={handleVerifyLogin} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                          Member Full Name *
-                        </label>
-                        <div className="relative">
-                          <User className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5" />
-                          <input
-                            type="text"
-                            required
-                            value={loginName}
-                            onChange={(e) => setLoginName(e.target.value)}
-                            className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none transition"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                          Student Access Code *
-                        </label>
-                        <div className="relative">
-                          <KeyRound className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5" />
-                          <input
-                            type="text"
-                            required
-                            value={loginCode}
-                            onChange={(e) => setLoginCode(e.target.value.toUpperCase())}
-                            className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base font-mono font-bold tracking-wider focus:border-blue-500 focus:outline-none transition uppercase"
-                          />
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="w-full min-h-[46px] py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 active:scale-[0.98] text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-blue-600/30 transition flex items-center justify-center gap-2"
-                      >
-                        <LogIn className="w-4 h-4 shrink-0" />
-                        <span>Login to Student Portal</span>
-                      </button>
-
-                      <div className="pt-2 text-center">
+                      <div className="pt-2">
                         <button
-                          type="button"
-                          onClick={() => setAuthMode("register")}
-                          className="text-xs text-blue-400 hover:text-blue-300 transition py-1"
+                          type="submit"
+                          className="w-full min-h-[48px] py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
                         >
-                          Don&apos;t have a Student Code? Register here
+                          <Shield className="w-4 h-4 shrink-0" />
+                          <span>Submit Admission Application</span>
                         </button>
                       </div>
                     </form>
-                  )}
+                  </div>
+                )}
+
+                {/* =========================================================================
+                    TAB 2: TRACK APPROVAL STATUS
+                   ========================================================================= */}
+                {authMode === "track" && (
+                  <div className="space-y-4 animate-fade-in">
+                    <form onSubmit={handleTrackStatus} className="space-y-3.5">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                          Enter Tracking Reference Code or Phone
+                        </label>
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5" />
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. REQ-4819 or 9876543210"
+                            value={trackInput}
+                            onChange={(e) => setTrackInput(e.target.value)}
+                            className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-[#13192B] border border-slate-700 text-white text-sm focus:border-blue-500 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                      >
+                        <Search className="w-4 h-4" />
+                        <span>Check Status</span>
+                      </button>
+                    </form>
+
+                    {/* Result Card */}
+                    {trackSearched && (
+                      <div className="pt-2">
+                        {!trackedStudent ? (
+                          <div className="p-4 rounded-2xl bg-red-950/30 border border-red-500/30 text-center space-y-1">
+                            <AlertCircle className="w-6 h-6 text-red-400 mx-auto" />
+                            <strong className="text-sm text-white block">No Request Found</strong>
+                            <p className="text-xs text-slate-400">
+                              Please verify your Tracking Reference Code or Phone number.
+                            </p>
+                          </div>
+                        ) : trackedStudent.approvalStatus === "PENDING_APPROVAL" ? (
+                          <div className="p-5 rounded-2xl bg-[#141A2E] border border-amber-500/40 text-left space-y-3 shadow-xl animate-fade-in">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 animate-spin" />
+                                <span>Waiting for Admin Approval</span>
+                              </span>
+                              <span className="font-mono text-xs text-slate-400 font-bold">
+                                {trackedStudent.accessCode}
+                              </span>
+                            </div>
+
+                            <p className="text-xs text-slate-200 leading-relaxed">
+                              Hello <strong>{trackedStudent.name}</strong>, your application for <strong>{trackedStudent.course}</strong> is currently waiting for admin review.
+                            </p>
+
+                            <div className="p-3 rounded-xl bg-[#090C16] border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                              <div>Cohort: <strong className="text-slate-200">{trackedStudent.ageGroup}</strong></div>
+                              <div>Batch: <strong className="text-slate-200">{trackedStudent.batchTime}</strong></div>
+                            </div>
+
+                            <p className="text-[11px] text-amber-300">
+                              Once approved by the academy admin, your official Access Code will be active here!
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-5 rounded-2xl bg-[#0F1D33] border border-emerald-500/50 text-left space-y-3.5 shadow-2xl animate-fade-in">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>ADMISSION APPROVED!</span>
+                              </span>
+                              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                                Permanent ID Active
+                              </span>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-[#070B16] border border-blue-500/40 text-center space-y-1.5">
+                              <span className="text-[10px] uppercase font-mono text-slate-400 block">
+                                Your Official Student Access Code
+                              </span>
+                              <div className="text-2xl font-black text-blue-400 font-mono tracking-wider">
+                                {trackedStudent.accessCode}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                VajraStudentStore.setStudent(trackedStudent);
+                                triggerWelcomeTransition(trackedStudent.accessCode, trackedStudent.name, trackedStudent.course);
+                              }}
+                              className="w-full min-h-[44px] py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition shadow flex items-center justify-center gap-2"
+                            >
+                              <span>Enter Student Portal</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* =========================================================================
+                    TAB 3: DIRECT PORTAL LOGIN
+                   ========================================================================= */}
+                {authMode === "login" && (
+                  <form onSubmit={handleVerifyLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                        Student Access Code
+                      </label>
+                      <div className="relative">
+                        <KeyRound className="w-4 h-4 text-blue-400 absolute left-3.5 top-3 sm:top-3.5" />
+                        <input
+                          type="text"
+                          required
+                          value={loginCode}
+                          onChange={(e) => setLoginCode(e.target.value)}
+                          placeholder="e.g. VAJRA-1026"
+                          className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-[#13192B] border border-slate-700/70 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none transition uppercase font-mono placeholder:normal-case placeholder:text-slate-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        className="w-full min-h-[48px] py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+                      >
+                        <LogIn className="w-4 h-4 shrink-0" />
+                        <span>Sign In to Student Portal</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
 
               </div>
             ) : (
+              /* SUCCESS STATE SCREEN: WAITING FOR ADMIN APPROVAL */
+              <div className="text-center space-y-4 sm:space-y-5 animate-fade-in py-2">
                 
-                /* =========================================================================
-                    SUCCESS STATE: ULTRA-PROFESSIONAL REGISTRATION COMPLETED BOX
-                   ========================================================================= */
-                <div className="text-center py-2 space-y-4 sm:space-y-5 animate-fade-in">
-                  
-                  {/* Glowing Success Badge */}
-                  <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-950/50">
-                    <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping" />
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-block mb-1.5">
-                      ● ENROLLMENT CONFIRMED
-                    </span>
-                    <h3 className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
-                      {successType === "register" ? "Registration Completed" : "Welcome Back"}
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                      Your official student workspace is ready. Use your Access Code to log in anytime.
-                    </p>
-                  </div>
-
-                  {/* Primary Student Access Code Display */}
-                  <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#13192B] to-[#0A0D18] border border-blue-500/40 space-y-2.5 shadow-xl">
-                    <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">
-                      Your Official Student Access Code
-                    </span>
-                    <div className="flex items-center justify-center gap-2.5 sm:gap-3 flex-wrap">
-                      <span className="font-mono text-xl sm:text-3xl font-black text-blue-400 tracking-wider break-all sm:break-normal">
-                        {generatedCode || loginCode}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleCopyCode}
-                        className="min-h-[38px] px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 transition flex items-center gap-1.5 text-xs font-semibold active:scale-95 shrink-0"
-                      >
-                        {codeCopied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
-                        <span>{codeCopied ? "Copied" : "Copy"}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Verified Student Pass Details */}
-                  <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-[#0C101F] border border-slate-800 text-left space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">Student Pass Summary</span>
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                        ACTIVE
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-slate-300">
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-slate-500 block uppercase">Member Name</span>
-                        <strong className="text-white text-xs block truncate">{regName || loginName || "Member"}</strong>
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-slate-500 block uppercase">Program</span>
-                        <strong className="text-blue-400 text-xs block truncate">{regCourse}</strong>
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-slate-500 block uppercase">Batch Slot</span>
-                        <strong className="text-slate-300 text-[11px] block truncate">{regBatchTime}</strong>
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-mono text-slate-500 block uppercase">Cohort</span>
-                        <strong className="text-slate-300 text-[11px] block truncate">{regAgeGroup}</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => triggerWelcomeTransition(generatedCode || loginCode, regName || loginName, regCourse)}
-                      className="min-h-[46px] flex-1 py-3.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 hover:from-blue-500 hover:to-cyan-400 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 text-center"
-                    >
-                      <span>Enter Student Portal</span>
-                      <ArrowRight className="w-4 h-4 shrink-0" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSuccess(false);
-                        setAuthMode("register");
-                      }}
-                      className="min-h-[46px] py-3.5 px-5 rounded-xl sm:rounded-2xl bg-[#13192B] hover:bg-[#1C253D] active:scale-[0.98] text-slate-300 border border-slate-700 font-semibold text-xs transition flex items-center justify-center"
-                    >
-                      New Session
-                    </button>
-                  </div>
-
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/10">
+                  <Clock className="w-7 h-7 sm:w-8 sm:h-8 animate-pulse" />
                 </div>
-              )}
+
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono uppercase tracking-wider font-bold mb-2">
+                    ● WAITING FOR ADMIN APPROVAL
+                  </span>
+                  <h3 className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
+                    Application Submitted!
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-sm mx-auto">
+                    Your application has been received. Please save your Tracking Code to check your admission approval status.
+                  </p>
+                </div>
+
+                {/* Tracking Reference Code Box */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#13192B] to-[#0A0D18] border border-amber-500/40 space-y-2 shadow-xl">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">
+                    Your Tracking Reference Code
+                  </span>
+                  <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-2xl sm:text-3xl font-black text-amber-400 tracking-wider">
+                      {generatedCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyCode}
+                      className="min-h-[38px] px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 text-amber-300 transition flex items-center gap-1.5 text-xs font-semibold active:scale-95 shrink-0"
+                    >
+                      {codeCopied ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 shrink-0" />}
+                      <span>{codeCopied ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#0C101F] border border-slate-800 text-left text-xs text-slate-300 space-y-1">
+                  <div>Applicant: <strong className="text-white">{regName}</strong></div>
+                  <div>Course: <strong className="text-blue-400">{regCourse}</strong></div>
+                  <div>Phone: <strong className="text-slate-200">{regPhone}</strong></div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSuccess(false);
+                      setTrackInput(generatedCode);
+                      setAuthMode("track");
+                    }}
+                    className="min-h-[46px] flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span>Track Approval Status</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSuccess(false);
+                      setAuthMode("register");
+                    }}
+                    className="min-h-[46px] py-3 px-5 rounded-xl bg-[#13192B] hover:bg-[#1C253D] text-slate-300 border border-slate-700 font-semibold text-xs transition"
+                  >
+                    New Admission
+                  </button>
+                </div>
+
+              </div>
+            )}
 
           </div>
 
         </div>
       </main>
 
-      {/* =========================================================================
-          UNIQUE & FORMAL VERIFICATION LOADING SPLASH (STUDENT & ADMIN)
-         ========================================================================= */}
+      {/* Verification Loading Splash */}
       {isWelcomeLoading && (
         <StudentVerificationSplash
           studentName={welcomeStudentName}
