@@ -454,34 +454,32 @@ export default function StudentPortalPage() {
                   </p>
                 </div>
 
-                {/* Attendance & Streak Metric Cards */}
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="p-3.5 sm:p-5 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-1">
-                    <span className="text-[11px] sm:text-xs text-slate-400 font-medium block">Attendance Rate</span>
-                    <div className="text-xl sm:text-2xl font-bold text-emerald-400">{student.attendanceRate}%</div>
-                    <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">Floor Presence</span>
+                {/* Quick Help & Portal Navigation Card */}
+                <div className="p-4 sm:p-6 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-4">
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-blue-400 uppercase tracking-wide">Quick Support</span>
+                    <h5 className="text-sm font-bold text-white">Direct Instructor Assistance</h5>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Have questions about your {student.course} training forms, batch timings, or practice drills?
+                    </p>
                   </div>
 
-                  <div className="p-3.5 sm:p-5 rounded-2xl bg-[#0D1220] border border-slate-800 space-y-1">
-                    <span className="text-[11px] sm:text-xs text-slate-400 font-medium block">Active Streak</span>
-                    <div className="text-xl sm:text-2xl font-bold text-blue-400">{student.streakDays} Day</div>
-                    <span className="text-[10px] sm:text-[11px] text-slate-400 block truncate">Regular Training</span>
+                  <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("doubt")}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition text-center"
+                    >
+                      Ask Doubt on WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("videos")}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-[#141A2E] hover:bg-[#1C253D] text-slate-200 border border-slate-700 font-semibold text-xs transition text-center"
+                    >
+                      Watch Practice Videos
+                    </button>
                   </div>
-                </div>
-
-                {/* Quick Help Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-[#0D1220] border border-slate-800 flex items-center justify-between gap-3 text-xs">
-                  <div className="min-w-0">
-                    <span className="text-slate-400 block truncate">Need assistance or form doubt?</span>
-                    <strong className="text-white block mt-0.5 truncate">Contact Instructor Desk</strong>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("doubt")}
-                    className="min-h-[40px] px-3.5 py-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 active:scale-95 font-semibold transition shrink-0"
-                  >
-                    Open Desk
-                  </button>
                 </div>
 
               </div>

@@ -1364,30 +1364,6 @@ export default function AdminPortalPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Attendance Rate (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editingStudent.attendanceRate}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, attendanceRate: Number(e.target.value) })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#141A2E] border border-slate-700 text-white focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Streak (Days)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={editingStudent.streakDays}
-                    onChange={(e) => setEditingStudent({ ...editingStudent, streakDays: Number(e.target.value) })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#141A2E] border border-slate-700 text-white focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-2.5 pt-2">
                 <button
                   type="button"
