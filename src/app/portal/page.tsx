@@ -193,7 +193,7 @@ export default function StudentPortalPage() {
     { id: "profile", label: "Profile", shortLabel: "Profile", icon: User },
     { id: "videos", label: "Training Videos", shortLabel: "Videos", icon: Video },
     { id: "meet", label: "Google Meet", shortLabel: "Meet", icon: Radio },
-    { id: "doubt", label: "Doubt & Contact", shortLabel: "Doubts", icon: MessageSquare },
+    { id: "doubt", label: "Ask Doubt Directly", shortLabel: "Ask Doubt", icon: MessageSquare },
   ];
 
   return (
@@ -500,7 +500,7 @@ export default function StudentPortalPage() {
 
                     {/* Registered Phone */}
                     <div className="flex items-center justify-between py-2 border-b border-slate-800/60 gap-3">
-                      <span className="text-slate-400 font-medium shrink-0">Registered WhatsApp</span>
+                      <span className="text-slate-400 font-medium shrink-0">Registered Mobile</span>
                       <span className="text-slate-300 font-mono font-medium text-right">{student.phone}</span>
                     </div>
 
@@ -552,9 +552,10 @@ export default function StudentPortalPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab("doubt")}
-                      className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition text-center"
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 shadow"
                     >
-                      Ask Doubt on WhatsApp
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Ask Doubt Directly</span>
                     </button>
                     <button
                       type="button"
