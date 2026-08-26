@@ -7,7 +7,7 @@ import { VajraStudentStore } from "@/lib/store";
 import VajraAlertModal from "./VajraAlertModal";
 import { 
   X, CheckCircle2, ArrowRight, MessageSquare, User, 
-  KeyRound, Copy, Check, LogIn, AlertCircle, Clock
+  KeyRound, Copy, Check, LogIn, AlertCircle, Clock, Shield
 } from "lucide-react";
 
 interface BookingModalProps {
@@ -349,12 +349,12 @@ export default function BookingModal({ isOpen, onClose, initialArt }: BookingMod
                     type="submit"
                     className="w-full min-h-[44px] mt-2 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs tracking-wider uppercase shadow-md shadow-blue-600/30 transition flex items-center justify-center gap-2"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Register & Enroll via WhatsApp</span>
+                    <Shield className="w-4 h-4" />
+                    <span>Submit Admission Application</span>
                   </button>
 
                   <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                    Upon registration, your Student Access Code is generated instantly.
+                    Upon submission, your Tracking Reference Code is generated for admin approval.
                   </p>
 
                 </form>
