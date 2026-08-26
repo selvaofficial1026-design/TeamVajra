@@ -1,0 +1,357 @@
+'use client';
+
+export interface VajraStudent {
+  accessCode: string;
+  name: string;
+  phone: string;
+  course: string;
+  ageGroup: string;
+  batchTime: string;
+  joinedDate: string;
+  currentLevel?: string;
+  beltColor?: string;
+  attendanceRate: number;
+  attendedClasses: number;
+  totalClasses: number;
+  streakDays: number;
+  nextAssessment: string;
+  feeStatus: 'ACTIVE' | 'DUE';
+  feeRenewalDate: string;
+  completedDrills: string[];
+}
+
+export interface TrainingVideo {
+  id: string;
+  course: string;
+  title: string;
+  youtubeUrl: string;
+  thumbnail?: string;
+  duration: string;
+  level: string;
+  desc: string;
+  focusPoints: string[];
+}
+
+export interface MeetInfo {
+  url: string;
+  updatedAt: number | null;
+  timeAgoText: string;
+  isRecent: boolean;
+}
+
+const ACTIVE_STUDENT_KEY = 'vajra_active_student';
+const MEMBERS_REGISTRY_KEY = 'vajra_members_registry';
+const COURSE_MEET_LINKS_KEY = 'vajra_course_meet_links';
+const COURSE_MEET_TIMESTAMPS_KEY = 'vajra_course_meet_timestamps';
+const TRAINING_VIDEOS_KEY = 'vajra_training_videos_real';
+
+export class VajraStudentStore {
+  static getMembersRegistry(): Record<string, VajraStudent> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const data = localStorage.getItem(MEMBERS_REGISTRY_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  static saveMemberToRegistry(student: VajraStudent) {
+    if (typeof window === 'undefined') return;
+    try {
+      const registry = this.getMembersRegistry();
+      registry[student.accessCode.toUpperCase()] = student;
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  static normalizePhone(phone: string): string {
+    if (!phone) return '';
+    const digits = phone.replace(/[^0-9]/g, '');
+    return digits.length > 10 ? digits.slice(-10) : digits;
+  }
+
+  static getStudentByPhone(phone: string): VajraStudent | null {
+    const norm = this.normalizePhone(phone);
+    if (!norm || norm.length < 10) return null;
+    const all = this.getAllStudents();
+    return all.find(s => this.normalizePhone(s.phone) === norm) || null;
+  }
+
+  static getMemberFromRegistry(code: string): VajraStudent | null {
+    const registry = this.getMembersRegistry();
+    return registry[code.toUpperCase()] || null;
+  }
+
+  static getStudent(): VajraStudent | null {
+    if (typeof window === 'undefined') return null;
+    const data = localStorage.getItem(ACTIVE_STUDENT_KEY);
+    if (!data) return null;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  static setStudent(student: VajraStudent | null) {
+    if (typeof window === 'undefined') return;
+    if (student) {
+      localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(student));
+      this.saveMemberToRegistry(student);
+    } else {
+      localStorage.removeItem(ACTIVE_STUDENT_KEY);
+    }
+    window.dispatchEvent(new Event('vajra_student_change'));
+  }
+
+  static createStudentProfile(
+    code: string, 
+    name: string, 
+    phone: string, 
+    course: string, 
+    ageGroup: string, 
+    batchTime: string
+  ): VajraStudent {
+    const selectedCourse = course || 'MARTIAL ARTS';
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const renewalDate = `1st of ${nextMonth.toLocaleDateString('en-US', { month: 'short' })}`;
+
+    const newStudent: VajraStudent = {
+      accessCode: code.toUpperCase().trim(),
+      name: name.trim() || "Member",
+      phone: phone.trim() || "+91 86681 02797",
+      course: selectedCourse,
+      ageGroup: ageGroup || 'Adult (18–45 yrs)',
+      batchTime: batchTime || 'Morning (05:30 AM – 07:30 AM)',
+      joinedDate: today,
+      attendanceRate: 100,
+      attendedClasses: 1,
+      totalClasses: 1,
+      streakDays: 1,
+      nextAssessment: `15th of ${nextMonth.toLocaleDateString('en-US', { month: 'short' })}`,
+      feeStatus: 'ACTIVE',
+      feeRenewalDate: renewalDate,
+      completedDrills: []
+    };
+
+    this.saveMemberToRegistry(newStudent);
+    return newStudent;
+  }
+
+  static getAllStudents(): VajraStudent[] {
+    const registry = this.getMembersRegistry();
+    return Object.values(registry);
+  }
+
+  static updateStudent(code: string, updates: Partial<VajraStudent>): VajraStudent | null {
+    if (typeof window === 'undefined') return null;
+    const registry = this.getMembersRegistry();
+    const upperCode = code.toUpperCase().trim();
+    if (!registry[upperCode]) return null;
+
+    const updated = { ...registry[upperCode], ...updates };
+    registry[upperCode] = updated;
+    try {
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      
+      const active = this.getStudent();
+      if (active && active.accessCode.toUpperCase() === upperCode) {
+        localStorage.setItem(ACTIVE_STUDENT_KEY, JSON.stringify(updated));
+        window.dispatchEvent(new Event('vajra_student_change'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return updated;
+  }
+
+  static deleteStudent(code: string): boolean {
+    if (typeof window === 'undefined') return false;
+    const registry = this.getMembersRegistry();
+    const upperCode = code.toUpperCase().trim();
+    if (!registry[upperCode]) return false;
+
+    delete registry[upperCode];
+    try {
+      localStorage.setItem(MEMBERS_REGISTRY_KEY, JSON.stringify(registry));
+      const active = this.getStudent();
+      if (active && active.accessCode.toUpperCase() === upperCode) {
+        localStorage.removeItem(ACTIVE_STUDENT_KEY);
+        window.dispatchEvent(new Event('vajra_student_change'));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return true;
+  }
+
+  static isAdminAuthenticated(): boolean {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem('vajra_admin_auth') === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  static setAdminAuthenticated(auth: boolean) {
+    if (typeof window === 'undefined') return;
+    try {
+      if (auth) {
+        sessionStorage.setItem('vajra_admin_auth', 'true');
+      } else {
+        sessionStorage.removeItem('vajra_admin_auth');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /* =========================================================================
+      REAL COURSE-SPECIFIC GOOGLE MEET LINKS & REAL-TIME TIMESTAMPS
+     ========================================================================= */
+  static getAllMeetLinks(): Record<string, string> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const data = localStorage.getItem(COURSE_MEET_LINKS_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  static getAllMeetTimestamps(): Record<string, number> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const data = localStorage.getItem(COURSE_MEET_TIMESTAMPS_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  static getMeetLinkInfo(course?: string): MeetInfo {
+    const links = this.getAllMeetLinks();
+    const upper = course ? course.toUpperCase().trim() : 'GENERAL';
+    const url = links[upper] || links['GENERAL'] || links['SILAMBAM'] || 'https://meet.google.com/new';
+    
+    const timestamps = this.getAllMeetTimestamps();
+    const updatedAt = timestamps[upper] || timestamps['GENERAL'] || null;
+
+    let timeAgoText = "Active Session Link";
+    let isRecent = false;
+
+    if (updatedAt) {
+      const diffMs = Date.now() - updatedAt;
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+      if (diffMins < 1) {
+        timeAgoText = "Coach posted this link just now";
+        isRecent = true;
+      } else if (diffMins < 60) {
+        timeAgoText = `Coach posted this link ${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+        isRecent = true;
+      } else if (diffHours < 24) {
+        timeAgoText = `Coach posted this link ${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        isRecent = true;
+      } else {
+        const dateStr = new Date(updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        timeAgoText = `Updated on ${dateStr}`;
+      }
+    }
+
+    return { url, updatedAt, timeAgoText, isRecent };
+  }
+
+  static getLiveMeetLink(course?: string): string {
+    return this.getMeetLinkInfo(course).url;
+  }
+
+  static setLiveMeetLink(course: string, link: string) {
+    if (typeof window === 'undefined') return;
+    try {
+      const upper = course.toUpperCase().trim();
+      const links = this.getAllMeetLinks();
+      links[upper] = link;
+      localStorage.setItem(COURSE_MEET_LINKS_KEY, JSON.stringify(links));
+
+      const timestamps = this.getAllMeetTimestamps();
+      timestamps[upper] = Date.now();
+      localStorage.setItem(COURSE_MEET_TIMESTAMPS_KEY, JSON.stringify(timestamps));
+
+      window.dispatchEvent(new Event('vajra_meet_link_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  /* =========================================================================
+      REAL TRAINING MASTERCLASS YOUTUBE VIDEOS (NO MOCK DATA)
+     ========================================================================= */
+  static getStoredVideos(): Record<string, TrainingVideo[]> {
+    if (typeof window === 'undefined') return {};
+    try {
+      const data = localStorage.getItem(TRAINING_VIDEOS_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  static getCourseVideos(course?: string): TrainingVideo[] {
+    const stored = this.getStoredVideos();
+    if (!course) return Object.values(stored).flat();
+    const upper = course.toUpperCase().trim();
+    return stored[upper] || [];
+  }
+
+  static getAllVideos(): TrainingVideo[] {
+    const stored = this.getStoredVideos();
+    return Object.values(stored).flat();
+  }
+
+  static addCourseVideo(video: Omit<TrainingVideo, 'id'>): TrainingVideo {
+    const stored = this.getStoredVideos();
+    const upper = video.course.toUpperCase().trim();
+    if (!stored[upper]) stored[upper] = [];
+
+    const newVideo: TrainingVideo = {
+      ...video,
+      id: `${upper.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+    };
+
+    stored[upper].unshift(newVideo);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return newVideo;
+  }
+
+  static deleteCourseVideo(course: string, id: string): boolean {
+    const stored = this.getStoredVideos();
+    const upper = course.toUpperCase().trim();
+    if (!stored[upper]) return false;
+
+    stored[upper] = stored[upper].filter(v => v.id !== id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(TRAINING_VIDEOS_KEY, JSON.stringify(stored));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return true;
+  }
+}
+

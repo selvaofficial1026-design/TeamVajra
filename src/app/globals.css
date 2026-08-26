@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #080B11;
+  --foreground: #F8FAFC;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  color: #F1F5F9;
+  background-color: #080B11;
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: clip;
+  max-width: 100vw;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Card Component */
+.premium-card {
+  background: #0E1322 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px -3px rgba(37, 99, 235, 0.1);
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.7), 0 0 25px -2px rgba(37, 99, 235, 0.25);
+}
+
+/* Eyebrows */
+.eyebrow-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #38BDF8;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  font-family: var(--font-display), system-ui, sans-serif;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+p {
+  color: #CBD5E1;
+  line-height: 1.6;
+}
+
+/* Action Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  color: #FFFFFF !important;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: #13192B;
+  color: #E2E8F0 !important;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #1E2742;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes progress3s {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress-3s {
+  animation: progress3s 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
